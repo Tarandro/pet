@@ -837,6 +837,8 @@ class BinaryPolarityProcessor(DataProcessor):
         with open(path) as f:
             reader = csv.reader(f, delimiter=',')
             for idx, row in enumerate(reader):
+                if idx == 0:
+                    continue
                 guid = "%s-%s" % (set_type, idx)
                 label = row[BinaryPolarityProcessor.LABEL_COLUMN]
                 text_a = row[BinaryPolarityProcessor.TEXT_A_COLUMN]
