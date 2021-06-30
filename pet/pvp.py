@@ -630,7 +630,7 @@ class BinaryPolarityPVP(PVP):
     # the corresponding DataProcessor's get_labels method) to tokens from the language model's vocabulary
     VERBALIZER = {
         "1": ["nul", "horrible", "terrible", "mauvais"],
-        "2": ["bien", "genial", "super", "bon"]
+        "2": ["bien", "génial", "super", "bon"]
     }
 
     def get_parts(self, example: InputExample):
@@ -675,7 +675,7 @@ class BinaryPolarity2PVP(PVP):
     # the corresponding DataProcessor's get_labels method) to tokens from the language model's vocabulary
     VERBALIZER = {
         "1": ["nul", "horrible", "terrible", "mauvais"],
-        "2": ["bien", "genial", "super", "bon"]
+        "2": ["bien", "génial", "super", "bon"]
     }
 
     def get_parts(self, example: InputExample):
