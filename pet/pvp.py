@@ -647,15 +647,15 @@ class BinaryPolarityPVP(PVP):
         # For each pattern_id, we define the corresponding pattern and return a pair of text a and text b (where text b
         # can also be empty).
         if self.pattern_id == 0:
-            return ["la voiture est", self.mask, '.', text], []
+            return ["c'est", self.mask, '.', text], []
         elif self.pattern_id == 1:
             if text[-1] in [".", "!", "?"]:
                 text = text[:-1]
-            return [text, ". En tout, la voiture est", self.mask, '.'], []
+            return [text, ". En tout, c'est", self.mask, '.'], []
         elif self.pattern_id == 2:
-            return ['Juste', self.mask, "la voiture !"], [text]
+            return ['Juste', self.mask, "!"], [text]
         elif self.pattern_id == 3:
-            return [text], ['Pour résumé, la voiture est', self.mask, '.']
+            return [text], ['Pour résumé, le commentaire est', self.mask, '.']
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
 
