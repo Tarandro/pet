@@ -692,7 +692,7 @@ class BinaryPolarity2PVP(PVP):
         # For each pattern_id, we define the corresponding pattern and return a pair of text a and text b (where text b
         # can also be empty).
         if self.pattern_id == 0:
-            return [text], ['Pour résumé, le commentaire est', self.mask, '.']
+            return ['Juste', self.mask, "!"], [text]
         else:
             raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
 
