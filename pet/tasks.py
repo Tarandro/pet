@@ -869,7 +869,8 @@ PROCESSORS = {
     "record": RecordProcessor,
     "ax-g": AxGProcessor,
     "ax-b": AxBProcessor,
-    "binary-polarity": BinaryPolarityProcessor
+    "binary-polarity": BinaryPolarityProcessor,
+    "binary-polarity2": BinaryPolarityProcessor
 }  # type: Dict[str,Callable[[],DataProcessor]]
 
 TASK_HELPERS = {

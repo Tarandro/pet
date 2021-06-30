@@ -629,8 +629,8 @@ class BinaryPolarityPVP(PVP):
     # Set this to the verbalizer for the given task: a mapping from the task's labels (which can be obtained using
     # the corresponding DataProcessor's get_labels method) to tokens from the language model's vocabulary
     VERBALIZER = {
-        "1": ["nul"],
-        "2": ["bien"]
+        "1": ["nul", "horrible", "terrible", "mauvais"],
+        "2": ["bien", "genial", "super", "bon"]
     }
 
     def get_parts(self, example: InputExample):
@@ -663,6 +663,43 @@ class BinaryPolarityPVP(PVP):
         return BinaryPolarityPVP.VERBALIZER[label]
 
 
+class BinaryPolarity2PVP(PVP):
+    """
+    Example for a pattern-verbalizer pair (PVP).
+    """
+
+    # Set this to the name of the task
+    TASK_NAME = "binary-polarity2"
+
+    # Set this to the verbalizer for the given task: a mapping from the task's labels (which can be obtained using
+    # the corresponding DataProcessor's get_labels method) to tokens from the language model's vocabulary
+    VERBALIZER = {
+        "1": ["nul", "horrible", "terrible", "mauvais"],
+        "2": ["bien", "genial", "super", "bon"]
+    }
+
+    def get_parts(self, example: InputExample):
+        """
+        This function defines the actual patterns: It takes as input an example and outputs the result of applying a
+        pattern to it. To allow for multiple patterns, a pattern_id can be passed to the PVP's constructor. This
+        method must implement the application of all patterns.
+        """
+
+        # We tell the tokenizer that both text_a and text_b can be truncated if the resulting sequence is longer than
+        # our language model's max sequence length.
+        text = self.shortenable(example.text_a)
+
+        # For each pattern_id, we define the corresponding pattern and return a pair of text a and text b (where text b
+        # can also be empty).
+        if self.pattern_id == 0:
+            return [text], ['Pour résumé, le commentaire est', self.mask, '.']
+        else:
+            raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
+
+    def verbalize(self, label) -> List[str]:
+        return BinaryPolarityPVP.VERBALIZER[label]
+
+
 PVPS = {
     'agnews': AgnewsPVP,
     'mnli': MnliPVP,
@@ -682,5 +719,6 @@ PVPS = {
     'record': RecordPVP,
     'ax-b': RtePVP,
     'ax-g': RtePVP,
-    "binary-polarity": BinaryPolarityPVP
+    "binary-polarity": BinaryPolarityPVP,
+    "binary-polarity2": BinaryPolarity2PVP
 }
