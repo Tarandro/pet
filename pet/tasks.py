@@ -885,7 +885,7 @@ METRICS = {
     "multirc": ["acc", "f1", "em"]
 }
 
-DEFAULT_METRICS = ["acc"]
+DEFAULT_METRICS = ["acc", "f1"]
 
 TRAIN_SET = "train"
 DEV_SET = "dev"
