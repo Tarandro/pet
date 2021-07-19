@@ -733,7 +733,7 @@ class ClassPVP(PVP):
                 if pattern[idx:idx+4] == "MASK":
                     special_idx = True
                     idx += 4
-                    SEP[n_sep] = self.mask
+                    SEP[n_sep].append(self.mask)
                 elif pattern[idx:idx+6] == "TEXT_A":
                     special_idx = True
                     idx += 6
@@ -741,7 +741,7 @@ class ClassPVP(PVP):
                     if pattern[idx] in [".", "!", "?", ","] or pattern[idx:idx+2] in [" .", " !", " ?", " ,"]:
                         remove_punctuation = True
                     idx_text["TEXT_A"] = [n_sep, len(SEP[n_sep]), remove_punctuation]
-                    SEP[n_sep] = "TEXT_A"
+                    SEP[n_sep].append("TEXT_A")
                 elif pattern[idx:idx+6] == "TEXT_B":
                     special_idx = True
                     idx += 6
@@ -749,7 +749,7 @@ class ClassPVP(PVP):
                     if pattern[idx] in [".", "!", "?", ","] or pattern[idx:idx + 2] in [" .", " !", " ?", " ,"]:
                         remove_punctuation = True
                     idx_text["TEXT_B"] = [n_sep, len(SEP[n_sep]), remove_punctuation]
-                    SEP[n_sep] = "TEXT_B"
+                    SEP[n_sep].append("TEXT_B")
                 elif pattern[idx:idx+3] == "SEP":
                     special_idx = True
                     idx += 3
