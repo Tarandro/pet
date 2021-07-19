@@ -738,16 +738,18 @@ class ClassPVP(PVP):
                     special_idx = True
                     idx += 6
                     remove_punctuation = False
-                    if pattern[idx] in [".", "!", "?", ","] or pattern[idx:idx+2] in [" .", " !", " ?", " ,"]:
-                        remove_punctuation = True
+                    if idx < len(pattern):
+                        if pattern[idx] in [".", "!", "?", ","] or pattern[idx:idx+2] in [" .", " !", " ?", " ,"]:
+                            remove_punctuation = True
                     idx_text["TEXT_A"] = [n_sep, len(SEP[n_sep]), remove_punctuation]
                     SEP[n_sep].append("TEXT_A")
                 elif pattern[idx:idx+6] == "TEXT_B":
                     special_idx = True
                     idx += 6
                     remove_punctuation = False
-                    if pattern[idx] in [".", "!", "?", ","] or pattern[idx:idx + 2] in [" .", " !", " ?", " ,"]:
-                        remove_punctuation = True
+                    if idx < len(pattern):
+                        if pattern[idx] in [".", "!", "?", ","] or pattern[idx:idx + 2] in [" .", " !", " ?", " ,"]:
+                            remove_punctuation = True
                     idx_text["TEXT_B"] = [n_sep, len(SEP[n_sep]), remove_punctuation]
                     SEP[n_sep].append("TEXT_B")
                 elif pattern[idx:idx+3] == "SEP":
