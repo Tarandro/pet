@@ -114,7 +114,8 @@ class WrapperConfig(object):
     """A configuration for a :class:`TransformerModelWrapper`."""
 
     def __init__(self, model_type: str, model_name_or_path: str, wrapper_type: str, task_name: str, max_seq_length: int,
-                 label_list: List[str], pattern_id: int = 0, verbalizer_file: str = None, cache_dir: str = None):
+                 label_list: List[str], pattern_id: int = 0, verbalizer_file: str = None, cache_dir: str = None,
+                 verbalizer: dict = None, pattern: dict = None):
         """
         Create a new config.
 
@@ -128,6 +129,8 @@ class WrapperConfig(object):
         :param verbalizer_file: optional path to a verbalizer file
         :param cache_dir: optional path to a cache dir
         """
+        if verbalizer is None:
+            verbalizer = dict()
         self.model_type = model_type
         self.model_name_or_path = model_name_or_path
         self.wrapper_type = wrapper_type
@@ -137,6 +140,8 @@ class WrapperConfig(object):
         self.pattern_id = pattern_id
         self.verbalizer_file = verbalizer_file
         self.cache_dir = cache_dir
+        self.verbalizer = verbalizer
+        self.pattern = pattern
 
 
 class TransformerModelWrapper:
@@ -164,7 +169,8 @@ class TransformerModelWrapper:
                                                  cache_dir=config.cache_dir if config.cache_dir else None)
 
         self.preprocessor = PREPROCESSORS[self.config.wrapper_type](self, self.config.task_name, self.config.pattern_id,
-                                                                    self.config.verbalizer_file)
+                                                                    self.config.verbalizer_file, self.config.verbalizer,
+                                                                    self.config.pattern)
         self.task_helper = TASK_HELPERS[self.config.task_name](self) if self.config.task_name in TASK_HELPERS else None
 
     @classmethod

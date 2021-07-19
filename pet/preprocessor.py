@@ -16,7 +16,7 @@ from typing import List
 import numpy as np
 
 from pet.utils import InputFeatures, InputExample, PLMInputFeatures
-from pet.pvp import PVP, PVPS
+from pet.pvp import PVP, PVPS, ClassPVP
 
 
 class Preprocessor(ABC):
@@ -25,7 +25,8 @@ class Preprocessor(ABC):
     processed by the model being used.
     """
 
-    def __init__(self, wrapper, task_name, pattern_id: int = 0, verbalizer_file: str = None):
+    def __init__(self, wrapper, task_name, pattern_id: int = 0, verbalizer_file: str = None,
+                 VERBALIZER={"1": ["nul"], "2": ["bien"]}, pattern={0: "C'est MASK ! TEXT_A TEXT_B"}):
         """
         Create a new preprocessor.
 
@@ -35,7 +36,9 @@ class Preprocessor(ABC):
         :param verbalizer_file: path to a file containing a verbalizer that overrides the default verbalizer
         """
         self.wrapper = wrapper
-        self.pvp = PVPS[task_name](self.wrapper, pattern_id, verbalizer_file)  # type: PVP
+        #self.pvp = PVPS[task_name](self.wrapper, pattern_id, verbalizer_file)  # type: PVP
+        self.pvp = ClassPVP(self.wrapper, pattern_id, verbalizer_file, seed=15,
+                            VERBALIZER=VERBALIZER, pattern=pattern)  # type: PVP
         self.label_map = {label: i for i, label in enumerate(self.wrapper.config.label_list)}
 
     @abstractmethod

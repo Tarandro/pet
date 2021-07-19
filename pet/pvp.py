@@ -700,6 +700,109 @@ class BinaryPolarity2PVP(PVP):
         return BinaryPolarityPVP.VERBALIZER[label]
 
 
+class ClassPVP(PVP):
+    """
+    Example for a pattern-verbalizer pair (PVP).
+    """
+
+    # Set this to the name of the task
+    TASK_NAME = "binary-polarity"
+
+    def __init__(self, wrapper, pattern_id: int = 0, verbalizer_file: str = None, seed: int = 42,
+                 VERBALIZER={"1": ["nul"], "2": ["bien"]}, pattern={0: "C'est MASK ! TEXT_A TEXT_B"}):
+        PVP.__init__(self, wrapper, pattern_id, verbalizer_file, seed)
+
+        # Set this to the verbalizer for the given task: a mapping from the task's labels (which can be obtained using
+        # the corresponding DataProcessor's get_labels method) to tokens from the language model's vocabulary
+        self.VERBALIZER = VERBALIZER
+        self.pattern = pattern
+
+        self.new_pattern = {}
+        self.idx_text = {}
+        for key in self.pattern.keys():
+            SEP = [[], []]
+            idx_text = {"TEXT_A": None, "TEXT_B": None}
+            n_sep = 0
+
+            pattern = self.pattern[key]
+            idx = 0
+
+            while idx < len(pattern):
+
+                if pattern[idx:idx+4] == "MASK":
+                    idx += 4
+                    SEP[n_sep] = self.mask
+                elif pattern[idx:idx+6] == "TEXT_A":
+                    idx += 6
+                    remove_punctuation = False
+                    if pattern[idx] in [".", "!", "?", ","] or pattern[idx:idx+2] in [" .", " !", " ?", " ,"]:
+                        remove_punctuation = True
+                    idx_text["TEXT_A"] = [n_sep, len(SEP[n_sep]), remove_punctuation]
+                    SEP[n_sep] = "TEXT_A"
+                elif pattern[idx:idx+6] == "TEXT_B":
+                    idx += 6
+                    remove_punctuation = False
+                    if pattern[idx] in [".", "!", "?", ","] or pattern[idx:idx + 2] in [" .", " !", " ?", " ,"]:
+                        remove_punctuation = True
+                    idx_text["TEXT_B"] = [n_sep, len(SEP[n_sep]), remove_punctuation]
+                    SEP[n_sep] = "TEXT_B"
+                elif pattern[idx:idx+3] == "SEP":
+                    idx += 3
+                    n_sep = 1
+                else:
+                    SEP[n_sep][-1] = SEP[n_sep][-1] + pattern[idx]
+                    idx += 1
+
+            self.new_pattern[key] = SEP
+            self.idx_text[key] = idx_text
+
+    def get_parts(self, example: InputExample):
+        """
+        This function defines the actual patterns: It takes as input an example and outputs the result of applying a
+        pattern to it. To allow for multiple patterns, a pattern_id can be passed to the PVP's constructor. This
+        method must implement the application of all patterns.
+        """
+
+        # We tell the tokenizer that both text_a and text_b can be truncated if the resulting sequence is longer than
+        # our language model's max sequence length.
+
+        text_a = self.shortenable(example.text_a)
+
+        # For each pattern_id, we define the corresponding pattern and return a pair of text a and text b (where text b
+        # can also be empty).
+
+        SEP = None
+        for key in self.new_pattern.keys():
+            if self.pattern_id == key:
+
+                SEP = self.new_pattern[key]
+                idx_text = self.idx_text[key]
+
+                if idx_text["TEXT_A"][2]:
+                    if text_a[-1] in [".", "!", "?", ","]:
+                        text_a = text_a[:-1]
+                SEP[idx_text["TEXT_A"][0]][idx_text["TEXT_A"][1]] = text_a
+
+                if idx_text["TEXT_B"] is not None:
+
+                    text_b = self.shortenable(example.text_b)
+
+                    if idx_text["TEXT_B"][2]:
+                        if text_b[-1] in [".", "!", "?", ","]:
+                            text_b = text_b[:-1]
+                    SEP[idx_text["TEXT_B"][0]][idx_text["TEXT_B"][1]] = text_b
+
+                break
+
+        if SEP is not None:
+            return SEP[0], SEP[1]
+        else:
+            raise ValueError("No pattern implemented for id {}".format(self.pattern_id))
+
+    def verbalize(self, label) -> List[str]:
+        return self.VERBALIZER[label]
+
+
 PVPS = {
     'agnews': AgnewsPVP,
     'mnli': MnliPVP,

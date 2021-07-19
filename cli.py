@@ -21,7 +21,7 @@ from typing import Tuple
 
 import torch
 
-from pet.tasks import PROCESSORS, load_examples, UNLABELED_SET, TRAIN_SET, DEV_SET, TEST_SET, METRICS, DEFAULT_METRICS
+from pet.tasks import ClassProcessor, PROCESSORS, load_examples, UNLABELED_SET, TRAIN_SET, DEV_SET, TEST_SET, METRICS, DEFAULT_METRICS
 from pet.utils import eq_div
 from pet.wrapper import WRAPPER_TYPES, MODEL_CLASSES, SEQUENCE_CLASSIFIER_WRAPPER, WrapperConfig
 import pet
@@ -37,7 +37,7 @@ def load_pet_configs(args) -> Tuple[WrapperConfig, pet.TrainConfig, pet.EvalConf
     model_cfg = WrapperConfig(model_type=args.model_type, model_name_or_path=args.model_name_or_path,
                               wrapper_type=args.wrapper_type, task_name=args.task_name, label_list=args.label_list,
                               max_seq_length=args.pet_max_seq_length, verbalizer_file=args.verbalizer_file,
-                              cache_dir=args.cache_dir)
+                              cache_dir=args.cache_dir, verbalizer=args.verbalizer, pattern=args.pattern)
 
     train_cfg = pet.TrainConfig(device=args.device, per_gpu_train_batch_size=args.pet_per_gpu_train_batch_size,
                                 per_gpu_unlabeled_batch_size=args.pet_per_gpu_unlabeled_batch_size, n_gpu=args.n_gpu,
@@ -62,7 +62,8 @@ def load_sequence_classifier_configs(args) -> Tuple[WrapperConfig, pet.TrainConf
     model_cfg = WrapperConfig(model_type=args.model_type, model_name_or_path=args.model_name_or_path,
                               wrapper_type=SEQUENCE_CLASSIFIER_WRAPPER, task_name=args.task_name,
                               label_list=args.label_list, max_seq_length=args.sc_max_seq_length,
-                              verbalizer_file=args.verbalizer_file, cache_dir=args.cache_dir)
+                              verbalizer_file=args.verbalizer_file, cache_dir=args.cache_dir,
+                              verbalizer=args.verbalizer, pattern=args.pattern)
 
     train_cfg = pet.TrainConfig(device=args.device, per_gpu_train_batch_size=args.sc_per_gpu_train_batch_size,
                                 per_gpu_unlabeled_batch_size=args.sc_per_gpu_unlabeled_batch_size, n_gpu=args.n_gpu,
@@ -215,6 +216,7 @@ def main():
                         help="Whether to perform evaluation on the dev set or the test set")
 
     args = parser.parse_args()
+
     logger.info("Parameters: {}".format(args))
 
     if os.path.exists(args.output_dir) and os.listdir(args.output_dir) \
