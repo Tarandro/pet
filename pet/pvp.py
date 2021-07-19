@@ -710,11 +710,11 @@ class ClassPVP(PVP):
 
     def __init__(self, wrapper, pattern_id: int = 0, verbalizer_file: str = None, seed: int = 42,
                  VERBALIZER={"1": ["nul"], "2": ["bien"]}, pattern={0: "C'est MASK ! TEXT_A TEXT_B"}):
+        self.VERBALIZER = VERBALIZER
         PVP.__init__(self, wrapper, pattern_id, verbalizer_file, seed)
 
         # Set this to the verbalizer for the given task: a mapping from the task's labels (which can be obtained using
         # the corresponding DataProcessor's get_labels method) to tokens from the language model's vocabulary
-        self.VERBALIZER = VERBALIZER
         self.pattern = pattern
 
         self.new_pattern = {}
