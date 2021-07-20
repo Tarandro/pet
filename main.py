@@ -145,6 +145,8 @@ def main(args):
 
     train_data = load_examples(
         args.task_name, args.data_dir, TRAIN_SET, num_examples=train_ex, num_examples_per_label=train_ex_per_label)
+    val_data = load_examples(
+        args.task_name, args.data_dir, DEV_SET, num_examples=-1, num_examples_per_label=test_ex_per_label)
     eval_data = load_examples(
         args.task_name, args.data_dir, eval_set, num_examples=test_ex, num_examples_per_label=test_ex_per_label)
     unlabeled_data = load_examples(
@@ -160,7 +162,7 @@ def main(args):
         pet.train_pet(pet_model_cfg, pet_train_cfg, pet_eval_cfg, sc_model_cfg, sc_train_cfg, sc_eval_cfg,
                       pattern_ids=args.pattern_ids, output_dir=args.output_dir,
                       ensemble_repetitions=args.pet_repetitions, final_repetitions=args.sc_repetitions,
-                      reduction=args.reduction, train_data=train_data, unlabeled_data=unlabeled_data,
+                      reduction=args.reduction, train_data=train_data, val_data=val_data, unlabeled_data=unlabeled_data,
                       eval_data=eval_data, do_train=args.do_train, do_eval=args.do_eval,
                       no_distillation=args.no_distillation, seed=args.seed)
 
@@ -168,12 +170,13 @@ def main(args):
         pet.train_ipet(pet_model_cfg, pet_train_cfg, pet_eval_cfg, ipet_cfg, sc_model_cfg, sc_train_cfg, sc_eval_cfg,
                        pattern_ids=args.pattern_ids, output_dir=args.output_dir,
                        ensemble_repetitions=args.pet_repetitions, final_repetitions=args.sc_repetitions,
-                       reduction=args.reduction, train_data=train_data, unlabeled_data=unlabeled_data,
+                       reduction=args.reduction, train_data=train_data, val_data=val_data, unlabeled_data=unlabeled_data,
                        eval_data=eval_data, do_train=args.do_train, do_eval=args.do_eval, seed=args.seed)
 
     elif args.method == 'sequence_classifier':
         pet.train_classifier(sc_model_cfg, sc_train_cfg, sc_eval_cfg, output_dir=args.output_dir,
-                             repetitions=args.sc_repetitions, train_data=train_data, unlabeled_data=unlabeled_data,
+                             repetitions=args.sc_repetitions, train_data=train_data, val_data=val_data,
+                             unlabeled_data=unlabeled_data,
                              eval_data=eval_data, do_train=args.do_train, do_eval=args.do_eval, seed=args.seed)
 
     else:

@@ -151,7 +151,8 @@ def train_ipet(ensemble_model_config: WrapperConfig, ensemble_train_config: Trai
                ensemble_eval_config: EvalConfig, ipet_config: IPetConfig, final_model_config: WrapperConfig,
                final_train_config: TrainConfig, final_eval_config: EvalConfig, pattern_ids: List[int], output_dir: str,
                ensemble_repetitions: int = 3, final_repetitions: int = 1, reduction: str = 'wmean',
-               train_data: List[InputExample] = None, unlabeled_data: List[InputExample] = None,
+               train_data: List[InputExample] = None, val_data: List[InputExample] = None,
+               unlabeled_data: List[InputExample] = None,
                eval_data: List[InputExample] = None, do_train: bool = True, do_eval: bool = True, seed: int = 42):
     """
     Train and evaluate a new iPET model for a given task.
@@ -182,7 +183,8 @@ def train_ipet(ensemble_model_config: WrapperConfig, ensemble_train_config: Trai
         ipet_data_dir = os.path.join(output_dir, f'g{gen - 1}', 'next-gen-train-data') if gen > 0 else None
         train_pet_ensemble(ensemble_model_config, ensemble_train_config, ensemble_eval_config, pattern_ids,
                            gen_output_dir, ipet_data_dir=ipet_data_dir,
-                           repetitions=ensemble_repetitions, train_data=train_data, unlabeled_data=unlabeled_data,
+                           repetitions=ensemble_repetitions, train_data=train_data, val_data=val_data,
+                           unlabeled_data=unlabeled_data,
                            eval_data=eval_data, do_train=do_train, do_eval=do_eval, save_unlabeled_logits=True)
 
         # Step 2: Use the model to annotate examples for the next generation
@@ -209,7 +211,7 @@ def train_ipet(ensemble_model_config: WrapperConfig, ensemble_train_config: Trai
     final_train_config.use_logits = True
 
     train_classifier(final_model_config, final_train_config, final_eval_config, os.path.join(output_dir, 'final'),
-                     repetitions=final_repetitions, train_data=train_data, unlabeled_data=unlabeled_data,
+                     repetitions=final_repetitions, train_data=train_data, val_data=val_data, unlabeled_data=unlabeled_data,
                      eval_data=eval_data, do_train=do_train, do_eval=do_eval)
 
 
@@ -217,7 +219,8 @@ def train_pet(ensemble_model_config: WrapperConfig, ensemble_train_config: Train
               ensemble_eval_config: EvalConfig, final_model_config: WrapperConfig, final_train_config: TrainConfig,
               final_eval_config: EvalConfig, pattern_ids: List[int], output_dir: str, ensemble_repetitions: int = 3,
               final_repetitions: int = 1, reduction: str = 'wmean', train_data: List[InputExample] = None,
-              unlabeled_data: List[InputExample] = None, eval_data: List[InputExample] = None, do_train: bool = True,
+              val_data: List[InputExample] = None, unlabeled_data: List[InputExample] = None,
+              eval_data: List[InputExample] = None, do_train: bool = True,
               do_eval: bool = True, no_distillation: bool = False, seed: int = 42):
     """
     Train and evaluate a new PET model for a given task.
@@ -244,7 +247,7 @@ def train_pet(ensemble_model_config: WrapperConfig, ensemble_train_config: Train
 
     # Step 1: Train an ensemble of models corresponding to individual patterns
     train_pet_ensemble(ensemble_model_config, ensemble_train_config, ensemble_eval_config, pattern_ids, output_dir,
-                       repetitions=ensemble_repetitions, train_data=train_data, unlabeled_data=unlabeled_data,
+                       repetitions=ensemble_repetitions, train_data=train_data, val_data=val_data, unlabeled_data=unlabeled_data,
                        eval_data=eval_data, do_train=do_train, do_eval=do_eval,
                        save_unlabeled_logits=not no_distillation, seed=seed)
 
@@ -265,12 +268,12 @@ def train_pet(ensemble_model_config: WrapperConfig, ensemble_train_config: Train
     final_train_config.use_logits = True
 
     train_classifier(final_model_config, final_train_config, final_eval_config, os.path.join(output_dir, 'final'),
-                     repetitions=final_repetitions, train_data=train_data, unlabeled_data=unlabeled_data,
+                     repetitions=final_repetitions, train_data=train_data, val_data=val_data, unlabeled_data=unlabeled_data,
                      eval_data=eval_data, do_train=do_train, do_eval=do_eval, seed=seed)
 
 
 def train_classifier(model_config: WrapperConfig, train_config: TrainConfig, eval_config: EvalConfig, output_dir: str,
-                     repetitions: int = 3, train_data: List[InputExample] = None,
+                     repetitions: int = 3, train_data: List[InputExample] = None, val_data: List[InputExample] = None,
                      unlabeled_data: List[InputExample] = None, eval_data: List[InputExample] = None,
                      do_train: bool = True, do_eval: bool = True, seed: int = 42):
     """
@@ -291,13 +294,14 @@ def train_classifier(model_config: WrapperConfig, train_config: TrainConfig, eva
 
     train_pet_ensemble(model_config, train_config, eval_config, pattern_ids=[0], output_dir=output_dir,
                        repetitions=repetitions,
-                       train_data=train_data, unlabeled_data=unlabeled_data, eval_data=eval_data, do_train=do_train,
+                       train_data=train_data, val_data=val_data, unlabeled_data=unlabeled_data, eval_data=eval_data, do_train=do_train,
                        do_eval=do_eval, seed=seed)
 
 
 def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, eval_config: EvalConfig,
                        pattern_ids: List[int], output_dir: str, ipet_data_dir: str = None, repetitions: int = 3,
-                       train_data: List[InputExample] = None, unlabeled_data: List[InputExample] = None,
+                       train_data: List[InputExample] = None, val_data: List[InputExample] = None,
+                       unlabeled_data: List[InputExample] = None,
                        eval_data: List[InputExample] = None, do_train: bool = True, do_eval: bool = True,
                        save_unlabeled_logits: bool = False, seed: int = 42):
     """
@@ -351,6 +355,7 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
                     ipet_train_data = None
 
                 results_dict.update(train_single_model(wrapper, train_data, train_config, eval_config,
+                                                       val_data=val_data,
                                                        ipet_train_data=ipet_train_data,
                                                        unlabeled_data=unlabeled_data))
 
@@ -374,7 +379,8 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
 
             # Evaluation
             if do_eval:
-                logger.info("\nStarting evaluation on eval set...")
+                print()
+                logger.info("Starting evaluation on eval set...")
                 if not wrapper:
                     wrapper = TransformerModelWrapper.from_pretrained(pattern_iter_output_dir)
 
@@ -403,11 +409,13 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
         logger.info("=== OVERALL RESULTS ===")
         _write_results(os.path.join(output_dir, 'result_test.txt'), results)
     else:
-        logger.info("=== ENSEMBLE TRAINING COMPLETE ===\n")
+        logger.info("=== ENSEMBLE TRAINING COMPLETE ===")
+        print()
 
 
 def train_single_model(model: TransformerModelWrapper, train_data: List[InputExample], config: TrainConfig,
-                       eval_config: EvalConfig = None, ipet_train_data: List[InputExample] = None,
+                       eval_config: EvalConfig = None, val_data: List[InputExample] = None,
+                       ipet_train_data: List[InputExample] = None,
                        unlabeled_data: List[InputExample] = None, return_train_set_results: bool = True):
     """
     Train a single model.
@@ -432,8 +440,12 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
     model.model.to(device)
 
     if train_data and return_train_set_results:
-        logger.info("\nEvaluation on Train set before training")
-        results_dict['train_set_before_training'] = evaluate(model, train_data, eval_config, type_dataset="train")['scores']['acc']
+        print()
+        logger.info("Evaluation on Train set before training")
+        scores = evaluate(model, train_data, eval_config, type_dataset="train")['scores']
+        results_dict['train_set_before_training'] = scores['acc']
+        logger.info("Scores :")
+        logger.info(scores)
 
     all_train_data = train_data + ipet_train_data
 
@@ -442,6 +454,7 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
     else:
         global_step, tr_loss = model.train(
             all_train_data, device,
+            val_data=val_data,
             per_gpu_train_batch_size=config.per_gpu_train_batch_size,
             per_gpu_unlabeled_batch_size=config.per_gpu_unlabeled_batch_size,
             n_gpu=config.n_gpu,
@@ -463,7 +476,8 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
         results_dict['average_loss'] = tr_loss
 
     # if train_data and return_train_set_results:
-    #    logger.info("\nEvaluation on Train set after training")
+    #    print()
+    #    logger.info("Evaluation on Train set after training")
     #    results_dict['train_set_after_training'] = evaluate(model, train_data, eval_config, type_dataset="train")['scores']['acc']
 
     return results_dict

@@ -204,7 +204,8 @@ class TransformerModelWrapper:
         with open(os.path.join(path, CONFIG_NAME), 'r') as f:
             return jsonpickle.decode(f.read())
 
-    def train(self, task_train_data: List[InputExample], device, per_gpu_train_batch_size: int = 8, n_gpu: int = 1,
+    def train(self, task_train_data: List[InputExample], device, val_data: List[InputExample] = None,
+              per_gpu_train_batch_size: int = 8, n_gpu: int = 1,
               num_train_epochs: int = 3, gradient_accumulation_steps: int = 1, weight_decay: float = 0.0,
               learning_rate: float = 5e-5, adam_epsilon: float = 1e-8, warmup_steps=0, max_grad_norm: float = 1,
               logging_steps: int = 50, per_gpu_unlabeled_batch_size: int = 8, unlabeled_data: List[InputExample] = None,
@@ -240,6 +241,12 @@ class TransformerModelWrapper:
         train_dataset = self._generate_dataset(task_train_data)
         train_sampler = RandomSampler(train_dataset)
         train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=train_batch_size)
+
+        if val_data is not None:
+            logger.info('\n--- Val Dataset Generation ---')
+            val_dataset = self._generate_dataset(val_data)
+            val_sampler = RandomSampler(val_dataset)
+            val_dataloader = DataLoader(val_dataset, sampler=val_sampler, batch_size=train_batch_size)
 
         unlabeled_dataloader, unlabeled_iter = None, None
 
@@ -283,12 +290,14 @@ class TransformerModelWrapper:
         step = 0
         global_step = 0
         tr_loss, logging_loss = 0.0, 0.0
+        losses = []
         self.model.zero_grad()
 
         train_iterator = trange(int(num_train_epochs), desc="Epoch")
 
         for _ in train_iterator:
             # epoch_iterator = tqdm(train_dataloader, desc="Iteration")
+            running_loss = 0.0
             for _, batch in enumerate(train_dataloader):   # enumerate(epoch_iterator):
                 self.model.train()
                 unlabeled_batch = None
@@ -324,6 +333,7 @@ class TransformerModelWrapper:
                 loss.backward()
 
                 tr_loss += loss.item()
+                running_loss += loss.item()
                 if (step + 1) % gradient_accumulation_steps == 0:
                     torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_grad_norm)
                     optimizer.step()
@@ -345,6 +355,40 @@ class TransformerModelWrapper:
                     # train_dataloader.close()
                     break
                 step += 1
+
+            train_epoch_loss = running_loss / len(train_dataloader.dataset)
+            print("train epoch loss :", train_epoch_loss)
+
+            if val_data is not None:
+                self.model.eval()
+                unlabeled_batch = None
+
+                running_loss = 0.0
+                for _, batch in enumerate(val_dataloader):
+                    batch = {k: t.to(device) for k, t in batch.items()}
+
+                    train_step_inputs = {
+                        'unlabeled_batch': unlabeled_batch, 'lm_training': False, 'alpha': alpha,
+                        'use_logits': use_logits, 'temperature': temperature
+                    }
+                    loss = self.task_helper.train_step(batch, **train_step_inputs) if self.task_helper else None
+
+                    if loss is None:
+                        loss = TRAIN_STEP_FUNCTIONS[self.config.wrapper_type](self)(batch, **train_step_inputs)
+
+                    if n_gpu > 1:
+                        loss = loss.mean()  # mean() to average on multi-gpu parallel training
+
+                    running_loss += loss.item()
+
+                val_epoch_loss = running_loss / len(val_dataloader.dataset)
+                print("val epoch loss :", val_epoch_loss)
+                print(f'Score Epoch, Loss: {train_epoch_loss:.4f} Test acc: {val_epoch_loss:.4f}')
+                losses.append([train_epoch_loss, val_epoch_loss])
+            else:
+                print(f'Score Epoch, Loss: {train_epoch_loss:.4f} ')
+                losses.append(train_epoch_loss)
+
             if 0 < max_steps < global_step:
                 train_iterator.close()
                 break
