@@ -94,9 +94,6 @@ class MLMPreprocessor(Preprocessor):
         else:
             mlm_labels = [-1] * self.wrapper.config.max_seq_length
 
-        print(1)
-        print(len(input_ids))
-
         return InputFeatures(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids,
                              label=label, mlm_labels=mlm_labels, logits=logits, idx=example.idx)
 
