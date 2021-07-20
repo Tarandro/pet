@@ -240,6 +240,8 @@ class TransformerModelWrapper:
         train_sampler = RandomSampler(train_dataset)
         train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=train_batch_size)
 
+        print("TRAIN")
+
         unlabeled_dataloader, unlabeled_iter = None, None
 
         if lm_training or use_logits:
@@ -286,8 +288,8 @@ class TransformerModelWrapper:
         train_iterator = trange(int(num_train_epochs), desc="Epoch")
 
         for _ in train_iterator:
-            epoch_iterator = tqdm(train_dataloader, desc="Iteration")
-            for _, batch in enumerate(epoch_iterator):
+            # epoch_iterator = tqdm(train_dataloader, desc="Iteration")
+            for _, batch in enumerate(train_dataloader):   # enumerate(epoch_iterator):
                 self.model.train()
                 unlabeled_batch = None
 
@@ -374,6 +376,8 @@ class TransformerModelWrapper:
 
         preds = None
         all_indices, out_label_ids, question_ids = None, None, None
+
+        print("EVAL")
 
         for batch in tqdm(eval_dataloader, desc="Evaluating"):
             self.model.eval()
