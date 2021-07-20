@@ -292,10 +292,11 @@ def train_classifier(model_config: WrapperConfig, train_config: TrainConfig, eva
     :param seed: the random seed to use
     """
 
+    logger.info("\n--- CLASSIFICATION ---")
+
     train_pet_ensemble(model_config, train_config, eval_config, pattern_ids=[0], output_dir=output_dir,
-                       repetitions=repetitions,
-                       train_data=train_data, val_data=val_data, unlabeled_data=unlabeled_data, eval_data=eval_data, do_train=do_train,
-                       do_eval=do_eval, seed=seed)
+                       repetitions=repetitions, train_data=train_data, val_data=val_data, unlabeled_data=unlabeled_data,
+                       eval_data=eval_data, do_train=do_train, do_eval=do_eval, seed=seed)
 
 
 def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, eval_config: EvalConfig,
@@ -327,8 +328,15 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
     results = defaultdict(lambda: defaultdict(list))
     set_seed(seed)
 
+    logger.info("\n--- VERBALIZER : {} ---".format(model_config.verbalizer))
+
     for pattern_id in pattern_ids:
+
+        logger.info("\n--- PATTERN {} : {} ---".format(pattern_id, model_config.pattern[pattern_id]))
+
         for iteration in range(repetitions):
+
+            logger.info("Iteration : {}/{}".format(iteration, repetitions))
 
             model_config.pattern_id = pattern_id
             results_dict = {}
@@ -391,7 +399,6 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
                 scores = eval_result['scores']
                 logger.info("--- RESULT (pattern_id={}, iteration={}) ---".format(pattern_id, iteration))
                 logger.info(scores)
-                logger.info("")
 
                 results_dict['test_set_after_training'] = scores
                 with open(os.path.join(pattern_iter_output_dir, 'results.json'), 'w') as fh:

@@ -237,7 +237,7 @@ class TransformerModelWrapper:
         """
 
         train_batch_size = per_gpu_train_batch_size * max(1, n_gpu)
-        logger.info('\n--- Train Dataset Generation ---')
+        logger.info('--- Train Dataset Generation ---')
         train_dataset = self._generate_dataset(task_train_data)
         train_sampler = RandomSampler(train_dataset)
         train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=train_batch_size)
@@ -409,7 +409,7 @@ class TransformerModelWrapper:
                  each evaluation example.
         """
 
-        logger.info('\n--- Evaluation on {} Dataset Generation ---'.format(type_dataset))
+        logger.info('--- Evaluation on {} Dataset Generation ---'.format(type_dataset))
         eval_dataset = self._generate_dataset(eval_data, priming=priming, type_dataset=type_dataset)
         eval_batch_size = per_gpu_eval_batch_size * max(1, n_gpu)
         eval_sampler = SequentialSampler(eval_dataset)
