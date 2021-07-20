@@ -674,8 +674,13 @@ def generate_ipet_train_sets(train_data: List[InputExample], unlabeled_data: Lis
         loglist = LogitsList(score=result_train, logits=logits)
         logits_lists[subdir] = loglist
 
+        print(1)
+        print(loglist)
+
     for subdir in subdirs:
         other_logits_lists = [ll for sd, ll in logits_lists.items() if sd != subdir]
+        print(2)
+        print(other_logits_lists)
         subdir_train_set = generate_ipet_train_set(
             other_logits_lists, labels=labels, original_data=unlabeled_data, examples_per_label=examples_per_label,
             logits_percentage=logits_percentage, reduction=reduction, n_most_likely=n_most_likely, rng=rng,
@@ -715,6 +720,9 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
     logits_lists = rng.sample(logits_lists, k=num_logits_lists)
     logits = np.array([ll.logits for ll in logits_lists])
     weights = np.array([ll.score for ll in logits_lists])
+
+    print(3)
+    print(weights)
 
     if reduction == 'mean':
         logits = np.mean(logits, axis=0)
