@@ -134,7 +134,7 @@ class PVP(ABC):
             parts_b = [x if isinstance(x, tuple) else (x, False) for x in parts_b]
             parts_b = [(tokenizer.encode(x, add_special_tokens=False, **kwargs), s) for x, s in parts_b if x]
 
-        self.truncate(parts_a, parts_b, max_length=self.wrapper.config.max_seq_length)
+        parts_a, parts_b = self.truncate(parts_a, parts_b, max_length=self.wrapper.config.max_seq_length)
 
         tokens_a = [token_id for part, _ in parts_a for token_id in part]
         tokens_b = [token_id for part, _ in parts_b for token_id in part] if parts_b else None
@@ -165,6 +165,7 @@ class PVP(ABC):
     def _remove_last(parts: List[Tuple[str, bool]]):
         last_idx = max(idx for idx, (seq, shortenable) in enumerate(parts) if shortenable and seq)
         parts[last_idx] = (parts[last_idx][0][:-1], parts[last_idx][1])
+        return parts
 
     def truncate(self, parts_a: List[Tuple[str, bool]], parts_b: List[Tuple[str, bool]], max_length: int):
         """Truncate two sequences of text to a predefined total maximum length"""
@@ -177,9 +178,10 @@ class PVP(ABC):
 
         for _ in range(num_tokens_to_remove):
             if self._seq_length(parts_a, only_shortenable=True) > self._seq_length(parts_b, only_shortenable=True):
-                self._remove_last(parts_a)
+                parts_a = self._remove_last(parts_a)
             else:
-                self._remove_last(parts_b)
+                parts_b = self._remove_last(parts_b)
+        return parts_a, parts_b
 
     @abstractmethod
     def get_parts(self, example: InputExample) -> FilledPattern:
