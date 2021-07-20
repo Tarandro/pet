@@ -236,12 +236,10 @@ class TransformerModelWrapper:
         """
 
         train_batch_size = per_gpu_train_batch_size * max(1, n_gpu)
-        logger.info(f'--- Train Dataset Generation ---')
+        logger.info('\n--- Train Dataset Generation ---')
         train_dataset = self._generate_dataset(task_train_data)
         train_sampler = RandomSampler(train_dataset)
         train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=train_batch_size)
-
-        print("TRAIN")
 
         unlabeled_dataloader, unlabeled_iter = None, None
 
@@ -354,7 +352,7 @@ class TransformerModelWrapper:
         return global_step, (tr_loss / global_step if global_step > 0 else -1)
 
     def eval(self, eval_data: List[InputExample], device, per_gpu_eval_batch_size: int = 8, n_gpu: int = 1,
-             priming: bool = False, decoding_strategy: str = 'default') -> Dict:
+             priming: bool = False, decoding_strategy: str = 'default', type_dataset: str = 'unlabeled') -> Dict:
         """
         Evaluate the underlying language model.
 
@@ -364,11 +362,12 @@ class TransformerModelWrapper:
         :param n_gpu: the number of gpus to use
         :param priming: whether to use priming
         :param decoding_strategy: the decoding strategy for PET with multiple masks ('default', 'ltr' or 'parallel')
+        :param type_dataset: 'train', 'dev', 'unlabeled', 'test'
         :return: a dictionary of numpy arrays containing the indices, logits, labels, and (optional) question_ids for
                  each evaluation example.
         """
 
-        logger.info(f'--- Evaluation Dataset Generation ---')
+        logger.info('\n--- Evaluation on {} Dataset Generation ---'.format(type_dataset))
         eval_dataset = self._generate_dataset(eval_data, priming=priming)
         eval_batch_size = per_gpu_eval_batch_size * max(1, n_gpu)
         eval_sampler = SequentialSampler(eval_dataset)
@@ -379,8 +378,6 @@ class TransformerModelWrapper:
 
         preds = None
         all_indices, out_label_ids, question_ids = None, None, None
-
-        print("EVAL")
 
         for batch in tqdm(eval_dataloader, desc="Evaluating"):
             self.model.eval()

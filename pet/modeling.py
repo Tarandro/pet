@@ -364,7 +364,7 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
                 logger.info("Saving complete")
 
                 if save_unlabeled_logits:
-                    logits = evaluate(wrapper, unlabeled_data, eval_config)['logits']
+                    logits = evaluate(wrapper, unlabeled_data, eval_config, type_dataset="unlabeled")['logits']
                     save_logits(os.path.join(pattern_iter_output_dir, 'logits.txt'), logits)
 
                 if not do_eval:
@@ -374,11 +374,11 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
 
             # Evaluation
             if do_eval:
-                logger.info("Starting evaluation...")
+                logger.info("\nStarting evaluation on eval set...")
                 if not wrapper:
                     wrapper = TransformerModelWrapper.from_pretrained(pattern_iter_output_dir)
 
-                eval_result = evaluate(wrapper, eval_data, eval_config, priming_data=train_data)
+                eval_result = evaluate(wrapper, eval_data, eval_config, type_dataset="eval_set", priming_data=train_data)
 
                 save_predictions(os.path.join(pattern_iter_output_dir, 'predictions.jsonl'), wrapper, eval_result)
                 save_logits(os.path.join(pattern_iter_output_dir, 'eval_logits.txt'), eval_result['logits'])
@@ -386,6 +386,7 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
                 scores = eval_result['scores']
                 logger.info("--- RESULT (pattern_id={}, iteration={}) ---".format(pattern_id, iteration))
                 logger.info(scores)
+                logger.info("")
 
                 results_dict['test_set_after_training'] = scores
                 with open(os.path.join(pattern_iter_output_dir, 'results.json'), 'w') as fh:
@@ -402,7 +403,7 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
         logger.info("=== OVERALL RESULTS ===")
         _write_results(os.path.join(output_dir, 'result_test.txt'), results)
     else:
-        logger.info("=== ENSEMBLE TRAINING COMPLETE ===")
+        logger.info("=== ENSEMBLE TRAINING COMPLETE ===\n")
 
 
 def train_single_model(model: TransformerModelWrapper, train_data: List[InputExample], config: TrainConfig,
@@ -431,7 +432,8 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
     model.model.to(device)
 
     if train_data and return_train_set_results:
-        results_dict['train_set_before_training'] = evaluate(model, train_data, eval_config)['scores']['acc']
+        logger.info("\nEvaluation on Train set before training")
+        results_dict['train_set_before_training'] = evaluate(model, train_data, eval_config, type_dataset="train")['scores']['acc']
 
     all_train_data = train_data + ipet_train_data
 
@@ -461,13 +463,14 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
         results_dict['average_loss'] = tr_loss
 
     # if train_data and return_train_set_results:
-    #    results_dict['train_set_after_training'] = evaluate(model, train_data, eval_config)['scores']['acc']
+    #    logger.info("\nEvaluation on Train set after training")
+    #    results_dict['train_set_after_training'] = evaluate(model, train_data, eval_config, type_dataset="train")['scores']['acc']
 
     return results_dict
 
 
 def evaluate(model: TransformerModelWrapper, eval_data: List[InputExample], config: EvalConfig,
-             priming_data: List[InputExample] = None) -> Dict:
+             type_dataset: str = 'unlabeled', priming_data: List[InputExample] = None) -> Dict:
     """
     Evaluate a model.
 
@@ -475,6 +478,7 @@ def evaluate(model: TransformerModelWrapper, eval_data: List[InputExample], conf
     :param eval_data: the examples for evaluation
     :param config: the evaluation config
     :param priming_data: an optional list of priming data to use
+    :param type_dataset: 'train', 'dev', 'unlabeled', 'test'
     :return: a dictionary containing the model's logits, predictions and (if any metrics are given) scores
     """
 
@@ -487,7 +491,8 @@ def evaluate(model: TransformerModelWrapper, eval_data: List[InputExample], conf
 
     model.model.to(device)
     results = model.eval(eval_data, device, per_gpu_eval_batch_size=config.per_gpu_eval_batch_size,
-                         n_gpu=config.n_gpu, decoding_strategy=config.decoding_strategy, priming=config.priming)
+                         n_gpu=config.n_gpu, decoding_strategy=config.decoding_strategy,
+                         type_dataset=type_dataset, priming=config.priming)
 
     predictions = np.argmax(results['logits'], axis=1)
     scores = {}
@@ -711,7 +716,7 @@ def generate_ipet_train_set(logits_lists: List[LogitsList], labels: List[str], o
     if not rng_np:
         rng_np = np.random.RandomState()
 
-    num_logits_lists = min(1, round(len(logits_lists) * logits_percentage))
+    num_logits_lists = max(1, round(len(logits_lists) * logits_percentage))
     logits_lists = rng.sample(logits_lists, k=num_logits_lists)
     logits = np.array([ll.logits for ll in logits_lists])
     weights = np.array([ll.score for ll in logits_lists])
