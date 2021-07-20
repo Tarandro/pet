@@ -483,7 +483,7 @@ class TransformerModelWrapper:
         features = []
         for (ex_index, example) in enumerate(examples):
             if ex_index % 10000 == 0:
-                logger.info("Writing example {}".format(ex_index))
+                logger.info("Writing example {} - {}".format(ex_index, min(ex_index+10000, len(examples))))
             input_features = self.preprocessor.get_input_features(example, labelled=labelled, priming=priming)
             if self.task_helper:
                 self.task_helper.add_special_input_features(example, input_features)
