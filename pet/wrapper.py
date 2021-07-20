@@ -243,7 +243,7 @@ class TransformerModelWrapper:
         train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=train_batch_size)
 
         if val_data is not None:
-            logger.info('\n--- Val Dataset Generation ---')
+            logger.info('--- Val Dataset Generation ---')
             val_dataset = self._generate_dataset(val_data)
             val_sampler = RandomSampler(val_dataset)
             val_dataloader = DataLoader(val_dataset, sampler=val_sampler, batch_size=train_batch_size)
