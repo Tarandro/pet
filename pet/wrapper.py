@@ -342,7 +342,7 @@ class TransformerModelWrapper:
                         print(json.dumps({**logs, **{'step': global_step}}))
 
                 if 0 < max_steps < global_step:
-                    epoch_iterator.close()
+                    # train_dataloader.close()
                     break
                 step += 1
             if 0 < max_steps < global_step:
@@ -444,7 +444,7 @@ class TransformerModelWrapper:
             if self.task_helper:
                 self.task_helper.add_special_input_features(example, input_features)
             features.append(input_features)
-            if ex_index < 5:
+            if ex_index < 3:
                 logger.info(f'--- Example {ex_index} ---')
                 logger.info(input_features.pretty_print(self.tokenizer))
         return features

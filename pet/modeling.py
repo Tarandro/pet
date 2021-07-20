@@ -430,8 +430,8 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
 
     model.model.to(device)
 
-    if train_data and return_train_set_results:
-        results_dict['train_set_before_training'] = evaluate(model, train_data, eval_config)['scores']['acc']
+    # if train_data and return_train_set_results:
+    #    results_dict['train_set_before_training'] = evaluate(model, train_data, eval_config)['scores']['acc']
 
     all_train_data = train_data + ipet_train_data
 
@@ -460,8 +460,8 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
         results_dict['global_step'] = global_step
         results_dict['average_loss'] = tr_loss
 
-    if train_data and return_train_set_results:
-        results_dict['train_set_after_training'] = evaluate(model, train_data, eval_config)['scores']['acc']
+    # if train_data and return_train_set_results:
+    #    results_dict['train_set_after_training'] = evaluate(model, train_data, eval_config)['scores']['acc']
 
     return results_dict
 
