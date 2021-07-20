@@ -236,6 +236,7 @@ class TransformerModelWrapper:
         """
 
         train_batch_size = per_gpu_train_batch_size * max(1, n_gpu)
+        logger.info(f'--- Train Dataset Generation ---')
         train_dataset = self._generate_dataset(task_train_data)
         train_sampler = RandomSampler(train_dataset)
         train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=train_batch_size)
@@ -248,6 +249,7 @@ class TransformerModelWrapper:
             # we need unlabeled data both for auxiliary language modeling and for knowledge distillation
             assert unlabeled_data is not None
             unlabeled_batch_size = per_gpu_unlabeled_batch_size * max(1, n_gpu)
+            logger.info(f'--- Unlabeled Dataset Generation ---')
             unlabeled_dataset = self._generate_dataset(unlabeled_data, labelled=False)
             unlabeled_sampler = RandomSampler(unlabeled_dataset)
             unlabeled_dataloader = DataLoader(unlabeled_dataset, sampler=unlabeled_sampler,
@@ -366,6 +368,7 @@ class TransformerModelWrapper:
                  each evaluation example.
         """
 
+        logger.info(f'--- Evaluation Dataset Generation ---')
         eval_dataset = self._generate_dataset(eval_data, priming=priming)
         eval_batch_size = per_gpu_eval_batch_size * max(1, n_gpu)
         eval_sampler = SequentialSampler(eval_dataset)
@@ -444,7 +447,7 @@ class TransformerModelWrapper:
             if self.task_helper:
                 self.task_helper.add_special_input_features(example, input_features)
             features.append(input_features)
-            if ex_index < 3:
+            if ex_index < 2:
                 logger.info(f'--- Example {ex_index} ---')
                 logger.info(input_features.pretty_print(self.tokenizer))
         return features
