@@ -155,6 +155,8 @@ class PVP(ABC):
         input_ids = tokenizer.build_inputs_with_special_tokens(tokens_a, tokens_b)
         token_type_ids = tokenizer.create_token_type_ids_from_sequences(tokens_a, tokens_b)
 
+        print(len(input_ids))
+
         return input_ids, token_type_ids
 
     @staticmethod
