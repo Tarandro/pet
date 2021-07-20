@@ -379,7 +379,6 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
 
             # Evaluation
             if do_eval:
-                print()
                 logger.info("Starting evaluation on eval set...")
                 if not wrapper:
                     wrapper = TransformerModelWrapper.from_pretrained(pattern_iter_output_dir)
@@ -410,7 +409,6 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
         _write_results(os.path.join(output_dir, 'result_test.txt'), results)
     else:
         logger.info("=== ENSEMBLE TRAINING COMPLETE ===")
-        print()
 
 
 def train_single_model(model: TransformerModelWrapper, train_data: List[InputExample], config: TrainConfig,
@@ -440,7 +438,6 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
     model.model.to(device)
 
     if train_data and return_train_set_results:
-        print()
         logger.info("Evaluation on Train set before training")
         scores = evaluate(model, train_data, eval_config, type_dataset="train")['scores']
         results_dict['train_set_before_training'] = scores['acc']
@@ -476,7 +473,6 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
         results_dict['average_loss'] = tr_loss
 
     # if train_data and return_train_set_results:
-    #    print()
     #    logger.info("Evaluation on Train set after training")
     #    results_dict['train_set_after_training'] = evaluate(model, train_data, eval_config, type_dataset="train")['scores']['acc']
 

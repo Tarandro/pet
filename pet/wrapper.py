@@ -356,8 +356,7 @@ class TransformerModelWrapper:
                     break
                 step += 1
 
-            train_epoch_loss = running_loss / len(train_dataloader.dataset)
-            print("train epoch loss :", train_epoch_loss)
+            train_epoch_loss = running_loss / len(train_dataloader)
 
             if val_data is not None:
                 self.model.eval()
@@ -381,9 +380,8 @@ class TransformerModelWrapper:
 
                     running_loss += loss.item()
 
-                val_epoch_loss = running_loss / len(val_dataloader.dataset)
-                print("val epoch loss :", val_epoch_loss)
-                print(f'Score Epoch, Loss: {train_epoch_loss:.4f} Test acc: {val_epoch_loss:.4f}')
+                val_epoch_loss = running_loss / len(val_dataloader)
+                print(f'Score Epoch, Loss: {train_epoch_loss:.5f} val loss: {val_epoch_loss:.5f}')
                 losses.append([train_epoch_loss, val_epoch_loss])
             else:
                 print(f'Score Epoch, Loss: {train_epoch_loss:.4f} ')
@@ -412,7 +410,7 @@ class TransformerModelWrapper:
         """
 
         logger.info('\n--- Evaluation on {} Dataset Generation ---'.format(type_dataset))
-        eval_dataset = self._generate_dataset(eval_data, priming=priming)
+        eval_dataset = self._generate_dataset(eval_data, priming=priming, type_dataset=type_dataset)
         eval_batch_size = per_gpu_eval_batch_size * max(1, n_gpu)
         eval_sampler = SequentialSampler(eval_dataset)
         eval_dataloader = DataLoader(eval_dataset, sampler=eval_sampler, batch_size=eval_batch_size)
@@ -458,8 +456,10 @@ class TransformerModelWrapper:
             'question_ids': question_ids
         }
 
-    def _generate_dataset(self, data: List[InputExample], labelled: bool = True, priming: bool = False):
-        features = self._convert_examples_to_features(data, labelled=labelled, priming=priming)
+    def _generate_dataset(self, data: List[InputExample], labelled: bool = True, priming: bool = False,
+                          type_dataset: str = "test"):
+        features = self._convert_examples_to_features(data, labelled=labelled, priming=priming,
+                                                      type_dataset=type_dataset)
         feature_dict = {
             'input_ids': torch.tensor([f.input_ids for f in features], dtype=torch.long),
             'attention_mask': torch.tensor([f.attention_mask for f in features], dtype=torch.long),
@@ -479,7 +479,7 @@ class TransformerModelWrapper:
         return DictDataset(**feature_dict)
 
     def _convert_examples_to_features(self, examples: List[InputExample], labelled: bool = True,
-                                      priming: bool = False) -> List[InputFeatures]:
+                                      priming: bool = False, type_dataset: str = "test") -> List[InputFeatures]:
         features = []
         for (ex_index, example) in enumerate(examples):
             if ex_index % 10000 == 0:
@@ -488,9 +488,10 @@ class TransformerModelWrapper:
             if self.task_helper:
                 self.task_helper.add_special_input_features(example, input_features)
             features.append(input_features)
-            if ex_index < 2:
-                logger.info(f'--- Example {ex_index} ---')
-                logger.info(input_features.pretty_print(self.tokenizer))
+            if type_dataset == "train":
+                if ex_index < 2:
+                    logger.info(f'--- Example {ex_index} ---')
+                    logger.info(input_features.pretty_print(self.tokenizer))
         return features
 
     def _mask_tokens(self, input_ids):
