@@ -224,7 +224,7 @@ def test(args, eval_set="test", output_dir_final_model=None):
     args.device = "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu"
     args.n_gpu = torch.cuda.device_count()
 
-    f = open(os.path.join(args.output_dir_final_model, "label_map.json"), "r")
+    f = open(os.path.join(output_dir_final_model, "label_map.json"), "r")
     label_map = json.load(f)
 
     processor = ClassProcessor(TRAIN_FILE_NAME=args.train_file_name, DEV_FILE_NAME=args.dev_file_name,
