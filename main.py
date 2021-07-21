@@ -149,13 +149,13 @@ def main(args):
     eval_set = TEST_SET if args.eval_set == 'test' else DEV_SET
 
     train_data = load_examples(
-        args.task_name, args.data_dir, TRAIN_SET, num_examples=train_ex, num_examples_per_label=train_ex_per_label)
+        processor, args.data_dir, TRAIN_SET, num_examples=train_ex, num_examples_per_label=train_ex_per_label)
     val_data = load_examples(
-        args.task_name, args.data_dir, DEV_SET, num_examples=-1, num_examples_per_label=test_ex_per_label)
+        processor, args.data_dir, DEV_SET, num_examples=-1, num_examples_per_label=test_ex_per_label)
     eval_data = load_examples(
-        args.task_name, args.data_dir, eval_set, num_examples=test_ex, num_examples_per_label=test_ex_per_label)
+        processor, args.data_dir, eval_set, num_examples=test_ex, num_examples_per_label=test_ex_per_label)
     unlabeled_data = load_examples(
-        args.task_name, args.data_dir, UNLABELED_SET, num_examples=args.unlabeled_examples)
+        processor, args.data_dir, UNLABELED_SET, num_examples=args.unlabeled_examples)
 
     # args.metrics = METRICS.get(args.task_name, DEFAULT_METRICS)
 
@@ -188,7 +188,10 @@ def main(args):
         raise ValueError(f"Training method '{args.method}' not implemented")
 
 
-def test(args, eval_set="test"):
+def test(args, eval_set="test", output_dir_final_model=None):
+
+    if output_dir_final_model is None:
+        output_dir_final_model = os.path.join(args.output_dir, 'final')
 
     args.wrapper_type = "mlm"
     args.lm_training = True
@@ -221,14 +224,19 @@ def test(args, eval_set="test"):
     args.device = "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu"
     args.n_gpu = torch.cuda.device_count()
 
-    f = open(os.path.join(args.output_dir, "label_list.json"), "r")
-    args.label_list = json.load(f)
+    f = open(os.path.join(args.output_dir_final_model, "label_map.json"), "r")
+    label_map = json.load(f)
 
-    eval_data = load_examples(args.task_name, args.data_dir, eval_set, num_examples=-1, num_examples_per_label=None)
+    processor = ClassProcessor(TRAIN_FILE_NAME=args.train_file_name, DEV_FILE_NAME=args.dev_file_name,
+                               TEST_FILE_NAME=args.test_file_name, UNLABELED_FILE_NAME=args.unlabeled_file_name,
+                               LABELS=args.labels, TEXT_A_COLUMN=args.text_a_column,
+                               TEXT_B_COLUMN=args.text_b_column, LABEL_COLUMN=args.label_column)
+
+    eval_data = load_examples(processor, args.data_dir, eval_set, num_examples=-1, num_examples_per_label=None)
 
     sc_model_cfg, sc_train_cfg, sc_eval_cfg = load_sequence_classifier_configs(args)
 
-    logits_dict = pet.test(os.path.join(args.output_dir, 'final'), eval_data, sc_eval_cfg, args.label_list, type_dataset=eval_set, priming_data=None)
+    logits_dict = pet.test(output_dir_final_model, eval_data, sc_eval_cfg, label_map, type_dataset=eval_set, priming_data=None)
 
     return logits_dict
 

@@ -212,6 +212,11 @@ def train_ipet(ensemble_model_config: WrapperConfig, ensemble_train_config: Trai
     final_model_config.wrapper_type = SEQUENCE_CLASSIFIER_WRAPPER
     final_train_config.use_logits = True
 
+    if not os.path.exists(os.path.join(output_dir, 'final')):
+        os.makedirs(os.path.join(output_dir, 'final'))
+    with open(os.path.join(os.path.join(output_dir, 'final'), "label_map.json"), "w") as outfile:
+        json.dump(label_map, outfile)
+
     train_classifier(final_model_config, final_train_config, final_eval_config, os.path.join(output_dir, 'final'),
                      repetitions=final_repetitions, train_data=train_data, val_data=val_data, unlabeled_data=unlabeled_data,
                      eval_data=eval_data, do_train=do_train, do_eval=do_eval)
@@ -271,6 +276,11 @@ def train_pet(ensemble_model_config: WrapperConfig, ensemble_train_config: Train
     # Step 3: Train the final sequence classifier model
     final_model_config.wrapper_type = SEQUENCE_CLASSIFIER_WRAPPER
     final_train_config.use_logits = True
+
+    if not os.path.exists(os.path.join(output_dir, 'final')):
+        os.makedirs(os.path.join(output_dir, 'final'))
+    with open(os.path.join(os.path.join(output_dir, 'final'), "label_map.json"), "w") as outfile:
+        json.dump(label_map, outfile)
 
     train_classifier(final_model_config, final_train_config, final_eval_config, os.path.join(output_dir, 'final'),
                      repetitions=final_repetitions, train_data=train_data, val_data=val_data, unlabeled_data=unlabeled_data,
@@ -558,7 +568,7 @@ def evaluate(model: TransformerModelWrapper, eval_data: List[InputExample], conf
     return results
 
 
-def test(output_dir: str, eval_data: List[InputExample], config: EvalConfig, label_list: dict,
+def test(output_dir: str, eval_data: List[InputExample], config: EvalConfig, label_map: dict,
          type_dataset: str = 'unlabeled', priming_data: List[InputExample] = None) -> Dict:
     """
     Test a model.
@@ -587,7 +597,6 @@ def test(output_dir: str, eval_data: List[InputExample], config: EvalConfig, lab
 
     predictions = results['logits']
 
-    label_map = {i: label for i, label in enumerate(label_list)}
     logits_dict = {}
     for i in label_map.keys():
         logits_dict[label_map[i]] = predictions[:, i]

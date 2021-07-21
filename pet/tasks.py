@@ -979,15 +979,13 @@ UNLABELED_SET = "unlabeled"
 SET_TYPES = [TRAIN_SET, DEV_SET, TEST_SET, UNLABELED_SET]
 
 
-def load_examples(task, data_dir: str, set_type: str, *_, num_examples: int = None,
+def load_examples(processor, data_dir: str, set_type: str, *_, num_examples: int = None,
                   num_examples_per_label: int = None, seed: int = 42) -> List[InputExample]:
     """Load examples for a given task."""
     assert (num_examples is not None) ^ (num_examples_per_label is not None), \
         "Exactly one of 'num_examples' and 'num_examples_per_label' must be set."
     assert (not set_type == UNLABELED_SET) or (num_examples is not None), \
         "For unlabeled data, 'num_examples_per_label' is not allowed"
-
-    processor = PROCESSORS[task]()
 
     ex_str = f"num_examples={num_examples}" if num_examples is not None \
         else f"num_examples_per_label={num_examples_per_label}"
