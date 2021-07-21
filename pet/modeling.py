@@ -590,7 +590,7 @@ def test(output_dir: str, eval_data: List[InputExample], config: EvalConfig, lab
     label_map = {i: label for i, label in enumerate(label_list)}
     logits_dict = {}
     for i in label_map.keys():
-        logits_dict[label_map[i]] = predictions[i, :]
+        logits_dict[label_map[i]] = predictions[:, i]
 
     return logits_dict
 
@@ -689,7 +689,7 @@ def merge_logits_lists(logits_lists: List[LogitsList], label_map: dict, reductio
 
     logits_dict = {}
     for i in label_map.keys():
-        logits_dict[label_map[i]] = logits[i, :].tolist()
+        logits_dict[label_map[i]] = logits[:, i].tolist()
 
     logits = logits.tolist()
 
