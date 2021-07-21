@@ -296,7 +296,7 @@ def train_classifier(model_config: WrapperConfig, train_config: TrainConfig, eva
 
     train_pet_ensemble(model_config, train_config, eval_config, pattern_ids=[0], output_dir=output_dir,
                        repetitions=repetitions, train_data=train_data, val_data=val_data, unlabeled_data=unlabeled_data,
-                       eval_data=eval_data, do_train=do_train, do_eval=do_eval, seed=seed)
+                       eval_data=eval_data, do_train=do_train, do_eval=do_eval, seed=seed, apply_classification=True)
 
 
 def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, eval_config: EvalConfig,
@@ -304,7 +304,7 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
                        train_data: List[InputExample] = None, val_data: List[InputExample] = None,
                        unlabeled_data: List[InputExample] = None,
                        eval_data: List[InputExample] = None, do_train: bool = True, do_eval: bool = True,
-                       save_unlabeled_logits: bool = False, seed: int = 42):
+                       save_unlabeled_logits: bool = False, seed: int = 42, apply_classification: bool = False):
     """
     Train and evaluate an ensemble of PET models without knowledge distillation.
 
@@ -323,6 +323,7 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
     :param save_unlabeled_logits: whether logits for unlabeled examples should be saved in a file ``logits.txt``. This
            is required for both iPET and knowledge distillation.
     :param seed: the random seed to use
+    :param apply_classification: apply a Classification model
     """
 
     results = defaultdict(lambda: defaultdict(list))
@@ -332,7 +333,8 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
 
     for pattern_id in pattern_ids:
 
-        logger.info("\n--- PATTERN {} : {} ---".format(pattern_id, model_config.pattern[pattern_id]))
+        if not apply_classification:
+            logger.info("\n--- PATTERN {} : {} ---".format(pattern_id, model_config.pattern[pattern_id]))
 
         for iteration in range(repetitions):
 
