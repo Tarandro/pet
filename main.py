@@ -228,7 +228,7 @@ def test(args, eval_set="test"):
 
     sc_model_cfg, sc_train_cfg, sc_eval_cfg = load_sequence_classifier_configs(args)
 
-    logits_dict = pet.test(args.output_dir, eval_data, sc_eval_cfg, args.label_list, type_dataset=eval_set, priming_data=None)
+    logits_dict = pet.test(os.path.join(args.output_dir, 'final'), eval_data, sc_eval_cfg, args.label_list, type_dataset=eval_set, priming_data=None)
 
     return logits_dict
 
