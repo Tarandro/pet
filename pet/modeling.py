@@ -689,7 +689,7 @@ def merge_logits_lists(logits_lists: List[LogitsList], label_map: dict, reductio
 
     logits_dict = {}
     for i in label_map.keys():
-        logits_dict[label_map[i]] = logits[i, :]
+        logits_dict[label_map[i]] = logits[i, :].tolist()
 
     logits = logits.tolist()
 
