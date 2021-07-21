@@ -21,7 +21,7 @@ from typing import List, Dict
 
 import numpy as np
 import torch
-from sklearn.metrics import f1_score
+from sklearn.metrics import f1_score, precision_score, recall_score
 from transformers.data.metrics import simple_accuracy
 
 import log
@@ -199,7 +199,9 @@ def train_ipet(ensemble_model_config: WrapperConfig, ensemble_train_config: Trai
     # Step 3: Merge the annotations created by each individual model
     logits_dir = os.path.join(output_dir, f'g{ipet_config.generations - 1}')
     logits_file = os.path.join(logits_dir, 'unlabeled_logits.txt')
-    merge_logits(logits_dir, logits_file, reduction)
+    logits_dict_file = os.path.join(output_dir, 'unlabeled_logits.json')
+    label_map = {i: label for i, label in enumerate(ensemble_model_config.label_list)}
+    merge_logits(output_dir, logits_file, reduction, label_map, logits_dict_file)
     logits = LogitsList.load(logits_file).logits
     assert len(logits) == len(unlabeled_data)
     logger.info("Got {} logits from file {}".format(len(logits), logits_file))
@@ -255,8 +257,11 @@ def train_pet(ensemble_model_config: WrapperConfig, ensemble_train_config: Train
         return
 
     # Step 2: Merge the annotations created by each individual model
+    logger.info("\n--- Merge Unlabeled Logits ---")
     logits_file = os.path.join(output_dir, 'unlabeled_logits.txt')
-    merge_logits(output_dir, logits_file, reduction)
+    logits_dict_file = os.path.join(output_dir, 'unlabeled_logits.json')
+    label_map = {i: label for i, label in enumerate(ensemble_model_config.label_list)}
+    merge_logits(output_dir, logits_file, reduction, label_map, logits_dict_file)
     logits = LogitsList.load(logits_file).logits
     assert len(logits) == len(unlabeled_data)
     logger.info("Got {} logits from file {}".format(len(logits), logits_file))
@@ -343,7 +348,10 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
             model_config.pattern_id = pattern_id
             results_dict = {}
 
-            pattern_iter_output_dir = "{}/p{}-i{}".format(output_dir, pattern_id, iteration)
+            if apply_classification:
+                pattern_iter_output_dir = "{}/p{}-i{}".format(output_dir, pattern_id, iteration)
+            else:
+                pattern_iter_output_dir = "{}/final_model".format(output_dir)
 
             if os.path.exists(pattern_iter_output_dir):
                 logger.warning(f"Path {pattern_iter_output_dir} already exists, skipping it...")
@@ -399,7 +407,10 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
                 save_logits(os.path.join(pattern_iter_output_dir, 'eval_logits.txt'), eval_result['logits'])
 
                 scores = eval_result['scores']
-                logger.info("--- RESULT (pattern_id={}, iteration={}) ---".format(pattern_id, iteration))
+                if apply_classification:
+                    logger.info("--- RESULT (iteration={}) ---".format(iteration))
+                else:
+                    logger.info("--- RESULT (pattern_id={}, iteration={}) ---".format(pattern_id, iteration))
                 logger.info(scores)
 
                 results_dict['test_set_after_training'] = scores
@@ -523,6 +534,20 @@ def evaluate(model: TransformerModelWrapper, eval_data: List[InputExample], conf
             scores[metric] = f1_score(results['labels'], predictions)
         elif metric == 'f1-macro':
             scores[metric] = f1_score(results['labels'], predictions, average='macro')
+        elif metric == 'f1-weighted':
+            scores[metric] = f1_score(results['labels'], predictions, average='weighted')
+        elif metric == 'recall':
+            scores[metric] = recall_score(results['labels'], predictions)
+        elif metric == 'recall-macro':
+            scores[metric] = recall_score(results['labels'], predictions, average='macro')
+        elif metric == 'recall-weighted':
+            scores[metric] = recall_score(results['labels'], predictions, average='weighted')
+        elif metric == 'precision':
+            scores[metric] = precision_score(results['labels'], predictions)
+        elif metric == 'precision-macro':
+            scores[metric] = precision_score(results['labels'], predictions, average='macro')
+        elif metric == 'precision-weighted':
+            scores[metric] = precision_score(results['labels'], predictions, average='weighted')
         elif metric == 'em':
             scores[metric] = exact_match(predictions, results['labels'], results['question_ids'])
         else:
@@ -531,6 +556,43 @@ def evaluate(model: TransformerModelWrapper, eval_data: List[InputExample], conf
     results['scores'] = scores
     results['predictions'] = predictions
     return results
+
+
+def test(output_dir: str, eval_data: List[InputExample], config: EvalConfig, label_list: dict,
+         type_dataset: str = 'unlabeled', priming_data: List[InputExample] = None) -> Dict:
+    """
+    Test a model.
+
+    :param model: the model to evaluate
+    :param eval_data: the examples for evaluation
+    :param config: the evaluation config
+    :param priming_data: an optional list of priming data to use
+    :param type_dataset: 'train', 'dev', 'unlabeled', 'test'
+    :return: a dictionary containing the model's logits, predictions and (if any metrics are given) scores
+    """
+
+    TransformerModelWrapper_output_dir = "{}/final_model".format(output_dir)
+    model = TransformerModelWrapper.from_pretrained(TransformerModelWrapper_output_dir)
+
+    if config.priming:
+        for example in eval_data:
+            example.meta['priming_data'] = priming_data
+
+    device = torch.device(config.device if config.device else "cuda" if torch.cuda.is_available() else "cpu")
+
+    model.model.to(device)
+    results = model.eval(eval_data, device, per_gpu_eval_batch_size=config.per_gpu_eval_batch_size,
+                         n_gpu=config.n_gpu, decoding_strategy=config.decoding_strategy,
+                         type_dataset=type_dataset, priming=config.priming)
+
+    predictions = results['logits']
+
+    label_map = {i: label for i, label in enumerate(label_list)}
+    logits_dict = {}
+    for i in label_map.keys():
+        logits_dict[label_map[i]] = predictions[i, :]
+
+    return logits_dict
 
 
 def _write_results(path: str, results: Dict):
@@ -552,7 +614,7 @@ def _write_results(path: str, results: Dict):
             fh.write(result_str + '\n')
 
 
-def merge_logits(logits_dir: str, output_file: str, reduction: str):
+def merge_logits(logits_dir: str, output_file: str, reduction: str, label_map: dict, logits_dict_file: str):
     """
     Merge the logits predicted for unlabeled examples by multiple models.
 
@@ -596,11 +658,14 @@ def merge_logits(logits_dir: str, output_file: str, reduction: str):
         loglist = LogitsList(score=result_train, logits=logits)
         all_logits_lists.append(loglist)
 
-    merged_loglist = merge_logits_lists(all_logits_lists, reduction=reduction)
+    merged_loglist, logits_dict = merge_logits_lists(all_logits_lists, label_map, reduction=reduction)
     merged_loglist.save(output_file)
 
+    with open(logits_dict_file, "w") as outfile:
+        json.dump(logits_dict, outfile)
 
-def merge_logits_lists(logits_lists: List[LogitsList], reduction: str = 'mean') -> LogitsList:
+
+def merge_logits_lists(logits_lists: List[LogitsList], label_map: dict, reduction: str = 'mean') -> LogitsList:
     """
     Merge a list of :class:`LogitsList` objects.
 
@@ -616,13 +681,19 @@ def merge_logits_lists(logits_lists: List[LogitsList], reduction: str = 'mean') 
     weights = np.array([ll.score for ll in logits_lists])
 
     if reduction == 'mean':
-        logits = np.mean(logits, axis=0).tolist()
+        logits = np.mean(logits, axis=0)
     elif reduction == 'wmean':
-        logits = np.average(logits, axis=0, weights=weights).tolist()
+        logits = np.average(logits, axis=0, weights=weights)
     else:
         raise ValueError("Reduction strategy '{}' not implemented".format(reduction))
 
-    return LogitsList(score=-1, logits=logits)
+    logits_dict = {}
+    for i in label_map.keys():
+        logits_dict[label_map[i]] = logits[i, :]
+
+    logits = logits.tolist()
+
+    return LogitsList(score=-1, logits=logits), logits_dict
 
 
 def generate_ipet_train_sets(train_data: List[InputExample], unlabeled_data: List[InputExample], labels: List[str],

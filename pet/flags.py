@@ -91,7 +91,7 @@ class Flags:
     # The total number of unlabeled examples to use, where -1 equals all examples
     unlabeled_examples: int = -1
     # Metrics
-    metrics: list = field(default_factory=lambda: ["acc", "f1", "f1-macro"])
+    metrics: list = field(default_factory=lambda: ["acc", "f1", "f1-macro", "f1-weighted"])
 
     # The initial learning rate for Adam
     learning_rate: float = 1e-5
@@ -104,6 +104,8 @@ class Flags:
     do_eval: bool = True
     # Whether to perform evaluation on the dev set or the test set
     eval_set: str = "test"   # ['dev', 'test']
+    # Whether to perform distillation
+    no_distillation: bool = False
 
     def update(self, param_dict: Dict) -> "Flags":
         # Overwrite by `param_dict`

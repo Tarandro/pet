@@ -17,6 +17,7 @@ one of the supported tasks and datasets.
 
 import argparse
 import os
+import json
 from typing import Tuple
 
 import torch
@@ -97,7 +98,6 @@ def main(args):
     args.temperature = 2
     args.verbalizer_file = None
     args.decoding_strategy = "default"
-    args.no_distillation = False
     args.pet_gradient_accumulation_steps = 1
     args.pet_max_steps = -1
     args.sc_repetitions = 1
@@ -133,6 +133,8 @@ def main(args):
                                LABELS=args.labels, TEXT_A_COLUMN=args.text_a_column,
                                TEXT_B_COLUMN=args.text_b_column, LABEL_COLUMN=args.label_column)
     args.label_list = processor.get_labels()
+    with open(os.path.join(args.output_dir, "label_list.json"), "w") as outfile:
+        json.dump(args.label_list, outfile)
 
     train_ex_per_label, test_ex_per_label = None, None
     train_ex, test_ex = args.train_examples, args.test_examples
@@ -181,6 +183,51 @@ def main(args):
 
     else:
         raise ValueError(f"Training method '{args.method}' not implemented")
+
+
+def test(args, eval_set="test"):
+
+    args.wrapper_type = "mlm"
+    args.lm_training = True
+    args.alpha = 0.9999
+    args.temperature = 2
+    args.verbalizer_file = None
+    args.decoding_strategy = "default"
+    args.pet_gradient_accumulation_steps = 1
+    args.pet_max_steps = -1
+    args.sc_repetitions = 1
+    args.sc_gradient_accumulation_steps = 1
+    args.sc_max_steps = -1
+    args.split_examples_evenly = False
+    args.cache_dir = ""
+    args.weight_decay = 0.01
+    args.adam_epsilon = 1e-8
+    args.max_grad_norm = 1.0
+    args.warmup_steps = 0
+    args.logging_steps = 50
+    args.no_cuda = False
+    args.overwrite_output_dir = False
+    args.priming = False
+
+    logger.info("Parameters: {}".format(args))
+
+    if not os.path.exists(args.output_dir):
+        raise ValueError("Output directory ({}) doesn't exist".format(args.output_dir))
+
+    # Setup CUDA, GPU & distributed training
+    args.device = "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu"
+    args.n_gpu = torch.cuda.device_count()
+
+    f = open(os.path.join(args.output_dir, "label_list.json"), "r")
+    args.label_list = json.load(f)
+
+    eval_data = load_examples(args.task_name, args.data_dir, eval_set, num_examples=-1, num_examples_per_label=None)
+
+    sc_model_cfg, sc_train_cfg, sc_eval_cfg = load_sequence_classifier_configs(args)
+
+    logits_dict = pet.test(args.output_dir, eval_data, sc_eval_cfg, args.label_list, type_dataset=eval_set, priming_data=None)
+
+    return logits_dict
 
 
 if __name__ == "__main__":

@@ -40,7 +40,6 @@ class Preprocessor(ABC):
         self.pvp = ClassPVP(self.wrapper, pattern_id, verbalizer_file, seed=15,
                             VERBALIZER=VERBALIZER, pattern=pattern)  # type: PVP
         self.label_map = {label: i for i, label in enumerate(self.wrapper.config.label_list)}
-        self.label_map_sort = {k: v for k, v in sorted(self.label_map.items(), key=lambda item: item[1])}
 
     @abstractmethod
     def get_input_features(self, example: InputExample, labelled: bool, priming: bool = False,
@@ -154,7 +153,7 @@ class SequenceClassifierPreprocessor(Preprocessor):
         if example.logits:
             logits = example.logits
         else:
-            logits = [1 if k == example.label else 0 for k in self.label_map_sort.keys()]
+            logits = [1 if k == example.label else 0 for k in self.label_map.keys()]
 
         return InputFeatures(input_ids=input_ids, attention_mask=attention_mask, token_type_ids=token_type_ids,
                              label=label, mlm_labels=mlm_labels, logits=logits, idx=example.idx)
