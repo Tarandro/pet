@@ -349,9 +349,9 @@ def train_pet_ensemble(model_config: WrapperConfig, train_config: TrainConfig, e
             results_dict = {}
 
             if apply_classification:
-                pattern_iter_output_dir = "{}/p{}-i{}".format(output_dir, pattern_id, iteration)
-            else:
                 pattern_iter_output_dir = "{}/final_model".format(output_dir)
+            else:
+                pattern_iter_output_dir = "{}/p{}-i{}".format(output_dir, pattern_id, iteration)
 
             if os.path.exists(pattern_iter_output_dir):
                 logger.warning(f"Path {pattern_iter_output_dir} already exists, skipping it...")
