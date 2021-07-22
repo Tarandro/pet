@@ -29,7 +29,7 @@ from classification import tasks_classif, wrapper_classif, utils_classif
 logger = log.get_logger('root')
 
 
-def load_sequence_classifier_configs(args) -> Tuple[classification.WrapperConfig, classification.TrainConfig, classification.EvalConfig]:
+def load_sequence_classifier_configs_classif(args) -> Tuple[classification.WrapperConfig, classification.TrainConfig, classification.EvalConfig]:
     """
     Load the model, training and evaluation configs for a regular sequence classifier from the given command line
     arguments. This classifier can either be used as a standalone model or as the final classifier for PET/iPET.
@@ -82,7 +82,7 @@ def add_fix_params(args):
     return args
 
 
-def main(args):
+def main_classif(args):
     args = add_fix_params(args)
 
     logger.info("Parameters: {}".format(args))
@@ -130,7 +130,7 @@ def main(args):
 
     # args.metrics = METRICS.get(args.task_name, DEFAULT_METRICS)
 
-    sc_model_cfg, sc_train_cfg, sc_eval_cfg = load_sequence_classifier_configs(args)
+    sc_model_cfg, sc_train_cfg, sc_eval_cfg = load_sequence_classifier_configs_classif(args)
 
     classification.train_classifier(sc_model_cfg, sc_train_cfg, sc_eval_cfg, output_dir=args.output_dir,
                                     repetitions=args.sc_repetitions, train_data=train_data, val_data=val_data,
@@ -138,7 +138,7 @@ def main(args):
                                     eval_data=eval_data, do_train=args.do_train, do_eval=args.do_eval, seed=args.seed)
 
 
-def test(args, eval_set="test", output_dir_final_model=None):
+def test_classif(args, eval_set="test", output_dir_final_model=None):
     args = add_fix_params(args)
 
     if output_dir_final_model is None:
@@ -163,7 +163,7 @@ def test(args, eval_set="test", output_dir_final_model=None):
 
     eval_data = tasks_classif.load_examples(processor, args.data_dir, eval_set, num_examples=-1, num_examples_per_label=None)
 
-    sc_model_cfg, sc_train_cfg, sc_eval_cfg = load_sequence_classifier_configs(args)
+    sc_model_cfg, sc_train_cfg, sc_eval_cfg = load_sequence_classifier_configs_classif(args)
 
     logits_dict = classification.test(output_dir_final_model, eval_data, sc_eval_cfg, label_map, type_dataset=eval_set, priming_data=None)
 
@@ -195,4 +195,4 @@ if __name__ == "__main__":
 
     args = args.update(flags_dict_info)
 
-    main(args)
+    main_classif(args)
