@@ -6,7 +6,7 @@ from yaml import dump, full_load
 
 
 @dataclass
-class Flags_classif:
+class Flags:
     """ Class to instantiate parameters """
     ### Required parameters
 
