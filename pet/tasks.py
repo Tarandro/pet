@@ -855,7 +855,7 @@ class ClassProcessor(DataProcessor):
     """
 
     # Set this to the name of the task
-    TASK_NAME = "binary-polarity"
+    TASK_NAME = "Verbalizer"
 
     def __init__(self, TRAIN_FILE_NAME="train.csv", DEV_FILE_NAME="dev.csv", TEST_FILE_NAME="test.csv",
                  UNLABELED_FILE_NAME="unlabeled.csv", LABELS = ["1", "2"], TEXT_A_COLUMN=1, TEXT_B_COLUMN=-1,

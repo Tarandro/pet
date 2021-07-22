@@ -708,7 +708,7 @@ class ClassPVP(PVP):
     """
 
     # Set this to the name of the task
-    TASK_NAME = "binary-polarity"
+    TASK_NAME = "Verbalizer"
 
     def __init__(self, wrapper, pattern_id: int = 0, verbalizer_file: str = None, seed: int = 42,
                  VERBALIZER={"1": ["nul"], "2": ["bien"]}, pattern={0: "C'est MASK ! TEXT_A TEXT_B"}):
