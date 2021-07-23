@@ -766,6 +766,9 @@ class ClassPVP(PVP):
                     special_idx = False
                     idx += 1
 
+            SEP[0] = [s[:-1] if s[-1] == " " else s for s in SEP[0]]
+            SEP[1] = [s[:-1] if s[-1] == " " else s for s in SEP[1]]
+
             self.new_pattern[key] = SEP
             self.idx_text[key] = idx_text
 
