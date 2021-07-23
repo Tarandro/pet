@@ -102,7 +102,6 @@ def add_fix_params(args):
     args.pet_max_steps = -1
     args.sc_repetitions = 1
     args.sc_gradient_accumulation_steps = 1
-    args.sc_max_steps = -1
     args.split_examples_evenly = False
     args.cache_dir = ""
     args.weight_decay = 0.01

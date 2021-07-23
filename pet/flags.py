@@ -67,6 +67,7 @@ class Flags:
     sc_per_gpu_unlabeled_batch_size: int = 4
     # Total number of training epochs to perform for sequence classifier training
     sc_num_train_epochs: int = 3
+    sc_max_steps: int = -1
 
     ### iPET-specific optional parameters
 
