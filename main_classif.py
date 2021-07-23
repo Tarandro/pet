@@ -19,6 +19,7 @@ import argparse
 import os
 import json
 from typing import Tuple
+import numpy as np
 
 import torch
 
@@ -81,7 +82,7 @@ def add_fix_params(args):
     return args
 
 
-def main_classif(args):
+def main_classif(args, logits_file=None):
     # todo : add access to unlabeled_logit.txt
     args = add_fix_params(args)
 
@@ -89,6 +90,16 @@ def main_classif(args):
 
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
+
+    if logits_file is not None:
+        f = open(logits_file, "r")
+        logits_dict = json.load(f)
+
+        logits_list = [v for v in logits_dict.values()]
+        logits_list = np.array(logits_list).transpose().tolist()
+
+        log = utils_classif.LogitsList(score=-1, logits=logits_list)
+        log.save(os.path.join(args.output_dir, 'unlabeled_logits.txt'))
 
     # Setup CUDA, GPU & distributed training
     args.device = "cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu"
