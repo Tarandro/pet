@@ -245,7 +245,7 @@ class TransformerModelWrapper:
             train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=train_batch_size)
         except:
             logger.info('--- No train Dataset ---')
-            train_dataloader, train_dataset, train_sampler = None
+            train_dataloader, train_dataset, train_sampler = None, None, None
 
         if val_data is not None:
             logger.info('--- Val Dataset Generation ---')
