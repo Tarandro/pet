@@ -201,7 +201,7 @@ def train_ipet(ensemble_model_config: WrapperConfig, ensemble_train_config: Trai
     logits_file = os.path.join(logits_dir, 'unlabeled_logits.txt')
     logits_dict_file = os.path.join(output_dir, 'unlabeled_logits.json')
     label_map = {i: label for i, label in enumerate(ensemble_model_config.label_list)}
-    merge_logits(output_dir, logits_file, reduction, label_map, logits_dict_file)
+    merge_logits(logits_dir, logits_file, reduction, label_map, logits_dict_file)    # change output_dir to logits_dir
     logits = LogitsList.load(logits_file).logits
     assert len(logits) == len(unlabeled_data)
     logger.info("Got {} logits from file {}".format(len(logits), logits_file))
