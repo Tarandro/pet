@@ -467,7 +467,7 @@ def train_single_model(model: TransformerModelWrapper, train_data: List[InputExa
 
     model.model.to(device)
 
-    if train_data and return_train_set_results:
+    if train_data and return_train_set_results and not config.use_logits:
         logger.info("Evaluation on Train set before training")
         scores = evaluate(model, train_data, eval_config, type_dataset="train")['scores']
         results_dict['train_set_before_training'] = scores['acc']

@@ -239,9 +239,13 @@ class TransformerModelWrapper:
 
         train_batch_size = per_gpu_train_batch_size * max(1, n_gpu)
         logger.info('--- Train Dataset Generation ---')
-        train_dataset = self._generate_dataset(task_train_data)
-        train_sampler = RandomSampler(train_dataset)
-        train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=train_batch_size)
+        try:
+            train_dataset = self._generate_dataset(task_train_data)
+            train_sampler = RandomSampler(train_dataset)
+            train_dataloader = DataLoader(train_dataset, sampler=train_sampler, batch_size=train_batch_size)
+        except:
+            logger.info('--- No train Dataset ---')
+            train_dataloader, train_dataset, train_sampler = None
 
         if val_data is not None:
             logger.info('--- Val Dataset Generation ---')
