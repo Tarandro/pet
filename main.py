@@ -27,6 +27,8 @@ from pet.utils import eq_div
 from pet.wrapper import WRAPPER_TYPES, MODEL_CLASSES, SEQUENCE_CLASSIFIER_WRAPPER, WrapperConfig
 import pet
 import log
+from pet.flags import save_yaml
+import dataclasses
 
 logger = log.get_logger('root')
 
@@ -143,6 +145,9 @@ def main(args):
     args.label_list = processor.get_labels()
     with open(os.path.join(args.output_dir, "label_list.json"), "w") as outfile:
         json.dump(args.label_list, outfile)
+
+    args_dict = dataclasses.asdict(args)
+    save_yaml(os.path.join(args.output_dir, "flags.yaml"), args_dict)
 
     train_ex_per_label, test_ex_per_label = None, None
     train_ex, test_ex = args.train_examples, args.test_examples
