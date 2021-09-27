@@ -274,6 +274,7 @@ class Pet:
         if os.path.exists(output_dir_train) and os.listdir(output_dir_train) \
                 and self.flags_parameters.do_train and not self.flags_parameters.overwrite_output_dir:
             raise ValueError("Output directory ({}) already exists and is not empty.".format(output_dir_train))
+        os.makedirs(output_dir_train)
 
         processor = ClassProcessor(TRAIN_FILE_NAME=train_file_name, DEV_FILE_NAME=dev_file_name,
                                    TEST_FILE_NAME=test_file_name, UNLABELED_FILE_NAME=unlabeled_file_name,
