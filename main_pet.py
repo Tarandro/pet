@@ -476,9 +476,9 @@ class Pet:
             if first_fold:
                 first_fold = False
                 if train_index == 'all':
-                    self.oof_val = np.zeros((y_val.shape[0],))
+                    self.oof_val = np.chararray((y_val.shape[0],))
                 else:
-                    self.oof_val = np.zeros((self.y_train.shape[0],))
+                    self.oof_val = np.chararray((self.y_train.shape[0],))
             self.oof_val[val_index] = y_val_pred
 
         acc, f1, recall, precision = self.calcul_metric_classification(self.y_train, self.oof_val, True)
