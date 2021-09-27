@@ -151,10 +151,6 @@ class Pet:
 
         logger.info("Parameters: {}".format(self.flags_parameters))
 
-        if os.path.exists(self.outdir) and os.listdir(self.outdir) \
-                and self.flags_parameters.do_train and not self.flags_parameters.overwrite_output_dir:
-            raise ValueError("Output directory ({}) already exists and is not empty.".format(self.outdir))
-
         if not os.path.exists(self.outdir):
             os.makedirs(self.outdir)
 
@@ -447,24 +443,12 @@ class Pet:
 
             if train_index == 'all':
                 # validation
-                if isinstance(self.x_train, pd.DataFrame):
-                    x_train, x_val = self.x_train.values, self.x_val.values
-                else:
-                    x_train, x_val = self.x_train, self.x_val
-                if isinstance(self.y_train, pd.DataFrame):
-                    y_train, y_val = self.y_train.values, self.y_val.values
-                else:
-                    y_train, y_val = self.y_train, self.y_val
+                x_train, x_val = self.x_train, self.x_val
+                y_train, y_val = self.y_train, self.y_val
             else:
                 # cross-validation
-                if isinstance(self.x_train, pd.DataFrame):
-                    x_train, x_val = self.x_train.values[train_index], self.x_train.values[val_index]
-                else:
-                    x_train, x_val = self.x_train[train_index], self.x_train[val_index]
-                if isinstance(self.y_train, pd.DataFrame):
-                    y_train, y_val = self.y_train.values[train_index], self.y_train.values[val_index]
-                else:
-                    y_train, y_val = self.y_train[train_index], self.y_train[val_index]
+                x_train, x_val = self.x_train.iloc[train_index, :], self.x_train.iloc[val_index, :]
+                y_train, y_val = self.y_train.iloc[train_index, :], self.y_train.iloc[val_index, :]
 
             text_x_column = 0
             text_y_column = 1
