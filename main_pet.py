@@ -350,7 +350,7 @@ class Pet:
 
         return os.path.join(self.outdir, 'final_'+str(i))
 
-    def predict_single_model(self, eval_set, output_dir_final_model,
+    def predict_single_model(self, eval_set, output_dir_final_model, data_dir,
                              train_file_name, dev_file_name, test_file_name, unlabeled_file_name,
                              text_x_column=0, text_y_column=1):
         args = add_fix_params(self.flags_parameters)
@@ -371,7 +371,7 @@ class Pet:
                                    LABELS=args.labels, TEXT_A_COLUMN=text_x_column,
                                    TEXT_B_COLUMN=-1, LABEL_COLUMN=text_y_column)
 
-        eval_data = load_examples(processor, args.data_dir, eval_set, num_examples=-1, num_examples_per_label=None)
+        eval_data = load_examples(processor, data_dir, eval_set, num_examples=-1, num_examples_per_label=None)
 
         sc_model_cfg, sc_train_cfg, sc_eval_cfg = load_sequence_classifier_configs(args)
 
@@ -467,6 +467,7 @@ class Pet:
                                                              text_x_column=text_x_column, text_y_column=text_y_column)
 
             logits_dict_val = self.predict_single_model(eval_set="dev", output_dir_final_model=output_dir_final_model,
+                                                        data_dir=data_dir,
                                                         train_file_name=train_file_name, dev_file_name=dev_file_name,
                                                         test_file_name=dev_file_name, unlabeled_file_name=unlabeled_file_name,
                                                         text_x_column=text_x_column, text_y_column=text_y_column)
@@ -537,6 +538,7 @@ class Pet:
             logger.info("model from : {}".format(model_path))
 
             logits_dict_test = self.predict_single_model(eval_set="test", output_dir_final_model=model_path,
+                                                         data_dir=data_dir,
                                                          train_file_name="", dev_file_name="",
                                                          test_file_name=test_file_name, unlabeled_file_name="",
                                                          text_x_column=text_x_column, text_y_column=text_y_column)
