@@ -350,7 +350,9 @@ class Pet:
 
         return os.path.join(self.outdir, 'final_'+str(i))
 
-    def predict_single_model(self, eval_set="test", output_dir_final_model=None):
+    def predict_single_model(self, eval_set, output_dir_final_model,
+                             train_file_name, dev_file_name, test_file_name, unlabeled_file_name,
+                             text_x_column=0, text_y_column=1):
         args = add_fix_params(self.flags_parameters)
 
         if output_dir_final_model is None:
@@ -364,10 +366,10 @@ class Pet:
         f = open(os.path.join(output_dir_final_model, "label_map.json"), "r")
         label_map = json.load(f)
 
-        processor = ClassProcessor(TRAIN_FILE_NAME=args.train_file_name, DEV_FILE_NAME=args.dev_file_name,
-                                   TEST_FILE_NAME=args.test_file_name, UNLABELED_FILE_NAME=args.unlabeled_file_name,
-                                   LABELS=args.labels, TEXT_A_COLUMN=args.text_a_column,
-                                   TEXT_B_COLUMN=args.text_b_column, LABEL_COLUMN=args.label_column)
+        processor = ClassProcessor(TRAIN_FILE_NAME=train_file_name, DEV_FILE_NAME=dev_file_name,
+                                   TEST_FILE_NAME=test_file_name, UNLABELED_FILE_NAME=unlabeled_file_name,
+                                   LABELS=args.labels, TEXT_A_COLUMN=text_x_column,
+                                   TEXT_B_COLUMN=-1, LABEL_COLUMN=text_y_column)
 
         eval_data = load_examples(processor, args.data_dir, eval_set, num_examples=-1, num_examples_per_label=None)
 
@@ -464,7 +466,10 @@ class Pet:
                                                              dev_file_name, unlabeled_file_name,
                                                              text_x_column=text_x_column, text_y_column=text_y_column)
 
-            logits_dict_val = self.predict_single_model(eval_set="dev", output_dir_final_model=output_dir_final_model)
+            logits_dict_val = self.predict_single_model(eval_set="dev", output_dir_final_model=output_dir_final_model,
+                                                        train_file_name=train_file_name, dev_file_name=dev_file_name,
+                                                        test_file_name=dev_file_name, unlabeled_file_name=unlabeled_file_name,
+                                                        text_x_column=text_x_column, text_y_column=text_y_column)
             y_val_pred = self.get_y_pred(logits_dict_val)
 
             if first_fold:
@@ -520,6 +525,8 @@ class Pet:
 
         data_dir = self.outdir
         test_file_name = "test.csv"
+        text_x_column = 0
+        text_y_column = 1
         pd.concat([x, y], axis=1).to_csv(os.path.join(data_dir, test_file_name), index=False)
 
         model_paths = sorted(glob(os.path.join(self.outdir, 'final*')))
@@ -529,7 +536,10 @@ class Pet:
         for model_path in model_paths:
             logger.info("model from : {}".format(model_path))
 
-            logits_dict_test = self.predict_single_model(eval_set="test", output_dir_final_model=model_path)
+            logits_dict_test = self.predict_single_model(eval_set="test", output_dir_final_model=model_path,
+                                                         train_file_name="", dev_file_name="",
+                                                         test_file_name=test_file_name, unlabeled_file_name="",
+                                                         text_x_column=text_x_column, text_y_column=text_y_column)
 
             for label in logits_dict_test.keys():
                 if label not in result_dict.keys():
