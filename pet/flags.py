@@ -24,6 +24,8 @@ class Flags:
     path_data: str = field(default_factory=str)
     # (Optional) path csv data to use for validation instead of cross-validation:
     path_data_validation: str = field(default_factory=str)  # if "empty", train on all data with no validation
+    # path for csv unlabeled data:
+    path_data_unlabeled: str = field(default_factory=str)
     # The output directory where the model predictions and checkpoints will be written
     outdir: str = field(default_factory=str)
 
