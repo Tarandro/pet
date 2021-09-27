@@ -459,7 +459,7 @@ class Pet:
             pd.concat([self.X_unlabeled, self.Y_unlabeled], axis=1).to_csv(os.path.join(data_dir, unlabeled_file_name), index=False)
 
             output_dir_final_model = self.train_single_model(data_dir, train_file_name, dev_file_name,
-                                                             test_file_name, unlabeled_file_name,
+                                                             dev_file_name, unlabeled_file_name,
                                                              text_x_column=text_x_column, text_y_column=text_y_column)
 
             logits_dict_val = self.predict_single_model(eval_set="dev", output_dir_final_model=output_dir_final_model)
