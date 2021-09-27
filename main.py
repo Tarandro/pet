@@ -228,30 +228,3 @@ def test(args, eval_set="test", output_dir_final_model=None):
     logits_dict = pet.test(output_dir_final_model, eval_data, sc_eval_cfg, label_map, type_dataset=eval_set, priming_data=None)
 
     return logits_dict
-
-
-if __name__ == "__main__":
-
-    from pet.flags import Flags
-    args = Flags()
-
-    flags_dict_info = {
-                      "method": 'pet',  # ['pet', 'ipet', 'sequence_classifier']
-                      "data_dir": '/content/',
-                      "model_type": "camembert",
-                      "model_name_or_path": "camembert-base",
-                      "output_dir": "/content/test0/",
-                      "pattern_ids": [0, 1, 2, 3],
-                      "pet_repetitions": 1,
-                      "pet_max_seq_length": 400,
-                      "pet_num_train_epochs": 3,
-                      "sc_max_seq_length": 400,
-                      "sc_num_train_epochs": 3,
-                      "eval_set": "test",
-                      "verbalizer": {"1": ["nul"], "2": ["bien"]},
-                      "pattern": {0: "C'est MASK ! TEXT_A"}
-                      }
-
-    args = args.update(flags_dict_info)
-
-    main(args)

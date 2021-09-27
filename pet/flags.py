@@ -18,8 +18,41 @@ class Flags:
     model_type: str = "camembert"
     # Path to the pre-trained model or shortcut name
     model_name_or_path: str = field(default_factory=str)
+
+    ### General
+    # path for csv data, use for train/test split:
+    path_data: str = field(default_factory=str)
+    # (Optional) path csv data to use for validation instead of cross-validation:
+    path_data_validation: str = field(default_factory=str)  # if "empty", train on all data with no validation
     # The output directory where the model predictions and checkpoints will be written
-    output_dir: str = field(default_factory=str)
+    outdir: str = field(default_factory=str)
+
+    # for debug : use only 50 data rows for training
+    debug: bool = False
+    # seed use for train/test split, cross-validation split and folds choice:
+    seed: int = 15
+
+    # name of the column with text
+    column_text: str = 'text'
+    # name of target column
+    target: str = 'target'
+
+    ### Preprocessing
+    # can apply a small cleaning on text column:
+    apply_small_clean: bool = True
+
+    # train/test split fraction:
+    frac_trainset: float = 0.7
+    # number of folds to split during optimization and cross-validation :
+    nfolds: int = 5
+    # number of folds to train during optimization and cross-validation :
+    nfolds_train: int = 5
+    # cross-validation method : 'StratifiedKFold' or 'KFold'
+    cv_strategy: str = "KFold"
+    ### Display
+    # sort dataframe leaderboard by a metric
+    # classification : ['accuracy','f1','recall','precision']
+    sort_leaderboard: str = "accuracy"
 
     ### Dataset
 
