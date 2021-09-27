@@ -199,6 +199,8 @@ class Pet:
         self.dataset_unlabeled = pd.read_csv(self.flags_parameters.path_data_unlabeled)
         self.dataset_unlabeled = self.pre.transform(self.dataset_unlabeled)
         self.X_unlabeled, self.Y_unlabeled, self.column_text = self.prepare.separate_X_Y(self.dataset_unlabeled)
+        if self.Y_unlabeled is None:
+            self.Y_unlabeled = pd.DataFrame({self.Y_train.columns[0]: [self.Y_train.iloc[0, 0] for i in range(len(self.X_unlabeled))]})
 
     def preprocess_test_data(self, data_test):
         """ Apply same transformation as in the function self.data_preprocessing for data_test
