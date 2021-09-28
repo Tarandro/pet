@@ -49,205 +49,80 @@ This repository contains the code for [Exploiting Cloze Questions for Few-Shot T
         <td align="right"><b>78.4</b></td>
     </tr>
 </table>
-    
-<sup>*Note*: To exactly reproduce the above results, make sure to use v1.1.0 (`--branch v1.1.0`).</sup>
 
-## 📑 Contents
+## Requirements
 
-**[🔧 Setup](#-setup)**
-
-**[💬 CLI Usage](#-cli-usage)**
-
-**[💻 API Usage](#-api-usage)**
-
-**[🐶 Train your own PET](#-train-your-own-pet)**
-
-**[📕 Citation](#-citation)**
-
-## 🔧 Setup
-
-All requirements for PET can be found in `requirements.txt`. You can install all required packages with `pip install -r requirements.txt`.
-
-## 💬 CLI Usage
-
-The command line interface `cli.py` in this repository currently supports three different training modes (PET, iPET, supervised training), two additional evaluation methods (unsupervised and priming) and 13 different tasks. For Yelp Reviews, AG's News, Yahoo Questions, MNLI and X-Stance, see [the original paper](https://arxiv.org/abs/2001.07676) for further details. For the 8 SuperGLUE tasks, see [this paper](https://arxiv.org/abs/2009.07118).
-
-### PET Training and Evaluation
-
-To train and evaluate a PET model for one of the supported tasks, simply run the following command:
-
-    python3 cli.py \
-	--method pet \
-	--pattern_ids $PATTERN_IDS \
-	--data_dir $DATA_DIR \
-	--model_type $MODEL_TYPE \
-	--model_name_or_path $MODEL_NAME_OR_PATH \
-	--task_name $TASK \
-	--output_dir $OUTPUT_DIR \
-	--do_train \
-	--do_eval
-    
- where
- - `$PATTERN_IDS` specifies the PVPs to use. For example, if you want to use *all* patterns, specify `PATTERN_IDS 0 1 2 3 4` for AG's News and Yahoo Questions or `PATTERN_IDS 0 1 2 3` for Yelp Reviews and MNLI.
- - `$DATA_DIR` is the directory containing the train and test files (check `tasks.py` to see how these files should be named and formatted for each task).
- - `$MODEL_TYPE` is the name of the model being used, e.g. `albert`, `bert` or `roberta`.
- - `$MODEL_NAME` is the name of a pretrained model (e.g., `roberta-large` or `albert-xxlarge-v2`) or the path to a pretrained model.
- - `$TASK_NAME` is the name of the task to train and evaluate on.
- - `$OUTPUT_DIR` is the name of the directory in which the trained model and evaluation results are saved.
- 
-You can additionally specify various training parameters for both the ensemble of PET models corresponding to individual PVPs (prefix `--pet_`) and for the final sequence classification model (prefix `--sc_`). For example, the default parameters used for our SuperGLUE evaluation are:
- 
- 	--pet_per_gpu_eval_batch_size 8 \
-	--pet_per_gpu_train_batch_size 2 \
-	--pet_gradient_accumulation_steps 8 \
-	--pet_max_steps 250 \
-	--pet_max_seq_length 256 \
-    --pet_repetitions 3 \
-	--sc_per_gpu_train_batch_size 2 \
-	--sc_per_gpu_unlabeled_batch_size 2 \
-	--sc_gradient_accumulation_steps 8 \
-	--sc_max_steps 5000 \
-	--sc_max_seq_length 256 \
-    --sc_repetitions 1
-    
-For each pattern `$P` and repetition `$I`, running the above command creates a directory `$OUTPUT_DIR/p$P-i$I` that contains the following files:
-  - `pytorch_model.bin`: the finetuned model, possibly along with some model-specific files (e.g, `spiece.model`, `special_tokens_map.json`)
-  - `wrapper_config.json`: the configuration of the model being used
-  - `train_config.json`: the configuration used for training
-  - `eval_config.json`: the configuration used for evaluation
-  - `logits.txt`: the model's predictions on the unlabeled data
-  - `eval_logits.txt`: the model's prediction on the evaluation data
-  - `results.json`: a json file containing results such as the model's final accuracy
-  - `predictions.jsonl`: a prediction file for the evaluation set in the SuperGlue format
-  
-The final (distilled) model for each repetition `$I` can be found in `$OUTPUT_DIR/final/p0-i$I`, which contains the same files as described above.
-
-🚨 If your GPU runs out of memory during training, you can try decreasing both the `pet_per_gpu_train_batch_size` and the `sc_per_gpu_unlabeled_batch_size` while increasing both `pet_gradient_accumulation_steps` and `sc_gradient_accumulation_steps`.
-
-
-### iPET Training and Evaluation
-
-To train and evaluate an iPET model for one of the supported tasks, simply run the same command as above, but replace `--method pet` with `--method ipet`. There are various additional iPET parameters that you can modify; all of them are prefixed with `--ipet_`.
-
-For each generation `$G`, pattern `$P` and iteration `$I`, this creates a directory `$OUTPUT_DIR/g$G/p$P-i$I` that is structured as for regular PET. The final (distilled) model can again be found in `$OUTPUT_DIR/final/p0-i$I`.
-
-🚨 If you use iPET with zero training examples, you need to specify how many examples for each label should be chosen in the first generation and you need to change the reduction strategy to mean: `--ipet_n_most_likely 100 --reduction mean`.
-
-### Supervised Training and Evaluation
-
-To train and evaluate a regular sequence classifier in a supervised fashion, simply run the same command as above, but replace `--method pet` with `--method sequence_classifier`. There are various additional parameters for the sequence classifier that you can modify; all of them are prefixed with `--sc_`.
-
-### Unsupervised Evaluation
-
-To evaluate a pretrained language model with the default PET patterns and verbalizers, but without fine-tuning, remove the argument `--do_train` and add `--no_distillation` so that no final distillation is performed.
-
-### Priming
-
-If you want to use priming, remove the argument `--do_train` and add the arguments `--priming --no_distillation` so that all training examples are used for priming and no final distillation is performed. 
-
-🚨 Remember that you may need to increase the maximum sequence length to a much larger value, e.g. `--pet_max_seq_length 5000`. This only works with language models that support such long sequences, e.g. XLNet. For using XLNet, you can specify `--model_type xlnet --model_name_or_path xlnet-large-cased --wrapper_type plm`.
-
-## 💻 API Usage
-
-Instead of using the command line interface, you can also directly use the PET API, most of which is defined in `pet.modeling`. By including `import pet`, you can access methods such as `train_pet`, `train_ipet` and `train_classifier`. Check out their documentation for more information.
-
-## 🐶 Train your own PET
-
-To use PET for custom tasks, you need to define two things: 
-
-- a **DataProcessor**, responsible for loading training and test data. See `examples/custom_task_processor.py` for an example.
-- a **PVP**, responsible for applying patterns to inputs and mapping labels to natural language verbalizations. See `examples/custom_task_pvp.py` for an example.
-
-After having implemented the DataProcessor and the PVP, you can train a PET model using the command line as [described above](#pet-training-and-evaluation). Below, you can find additional information on how to define the two components of a PVP, *verbalizers* and *patterns*.
-
-### Verbalizers
-
-Verbalizers are used to map task labels to words in natural language. For example, in a binary sentiment classification task, you could map the positive label (`+1`) to the word `good` and the negative label (`-1`) to the word `bad`. Verbalizers are realized through a PVP's `verbalize()` method. The simplest way of defining a verbalizer is to use a dictionary:
-
+Python 3.7 or later with all requirements.txt dependencies installed. To install run:
 ```python
-VERBALIZER = {"+1": ["good"], "-1": ["bad"]}
-    
-def verbalize(self, label) -> List[str]:
-    return self.VERBALIZER[label]       
+$ pip install -r requirements.txt
 ```
 
-Importantly, in PET's current version, verbalizers are by default restricted to **single tokens** in the underlying LMs vocabulary (for using more than one token, [see below](#pet-with-multiple-masks)). Given a language model's tokenizer, you can easily check whether a word corresponds to a single token by verifying that `len(tokenizer.tokenize(word)) == 1`.
-
-You can also define multiple verbalizations for a single label. For example, if you are unsure which words best represent the labels in a binary sentiment classification task, you could define your verbalizer as follows:
+## Minimum codes
 
 ```python
-VERBALIZER = {"+1": ["great", "good", "wonderful", "perfect"], "-1": ["bad", "terrible", "horrible"]}
+from main_pet import *
+
+parameters_to_update = {
+                      "method": 'pet',  # ['pet', 'ipet', 'sequence_classifier']                                 
+                      "model_type": "camembert",                               
+                      "model_name_or_path": "camembert-base",           
+                      "path_data": "/content/train.csv",
+                      "path_data_validation": "",
+                      "path_data_unlabeled": "/content/unlabeled_plus.csv",       
+                      "outdir": "/content/logs/",              
+                      "debug": False,
+                      "seed": 15, 
+                      "column_text": "text_fr",
+                      "target": "sentiment",  
+                      "frac_trainset": 1, 
+                      "nfolds": 5, 
+                      "nfolds_train": 5, 
+                      "cv_strategy": "KFold", 
+
+                      "pattern_ids": [0],                             
+                      "pet_repetitions": 1,                                    
+                      "pet_max_seq_length": 100,                     
+                      "pet_num_train_epochs": 2,                               
+                      "sc_max_seq_length": 100,                        
+                      "sc_num_train_epochs": 4,                                
+                      "sc_max_steps": -1,                                      
+                      "metrics": ["acc", "f1-macro", "f1-weighted"],
+                      "reduction": "mean",                                            
+                      "labels": ["negative", "positive", "neutral"],
+                      "verbalizer": {"negative": ["négatif"], "positive": ["positif"], "neutral":["neutre"]},
+                      "pattern": {0: "Le sentiment du texte est MASK : TEXT_A"}            # , 1: "TEXT_A . C'est MASK", 2: "TEXT_A .Le titre est MASK"
+                      }
+# update parameters :
+args = Flags().update(parameters_to_update)
+petnlp = Pet(args)
 ```
-
-### Patterns
-
-Patterns are used to make the language model understand a given task; they must contain exactly one `<MASK>` token which is to be filled using the verbalizer. For binary sentiment classification based on a review's summary (`<A>`) and body (`<B>`), a suitable pattern may be `<A>. <B>. Overall, it was <MASK>.` Patterns are realized through a PVP's `get_parts()` method, which returns a pair of text sequences (where each sequence is represented by a list of strings):
-
+Preprocessing, split train/test and Training + Validation:
 ```python
-def get_parts(self, example: InputExample):
-    return [example.text_a, '.', example.text_b, '.'], ['Overall, it was ', self.mask]
+petnlp.data_preprocessing()
+petnlp.train()
+# validation leaderboard :
+leaderboard_val = petnlp.get_leaderboard(dataset='val')
 ```
-
-If you do not want to use a pair of sequences, you can simply leave the second sequence empty:
-
+Prediction on test set for all models:
 ```python
-def get_parts(self, example: InputExample):
-    return [example.text_a, '.', example.text_b, '. Overall, it was ', self.mask], []
-```
-            
-If you want to define several patterns, simply use the `PVP`s `pattern_id` attribute:
-
-```python
-def get_parts(self, example: InputExample):
-    if self.pattern_id == 1:
-        return [example.text_a, '.', example.text_b, '.'], ['Overall, it was ', self.mask]
-    elif self.pattern_id == 2:
-        return ['It was just ', self.mask, '!', example.text_a, '.', example.text_b, '.'], []
+y_test_pred, y_test_confidence, result_dict = petnlp.prediction(on_test_data=True)
+# test leaderboard :
+leaderboard_test = petnlp.get_leaderboard(dataset='test')
 ```
 
-When training the model using the command line, specify all patterns to be used (e.g., `--pattern_ids 1 2`).
+## Usage examples
 
-Importantly, if a sequence is longer than the specified maximum sequence length of the underlying LM, PET must know which parts of the input can be shortened and which ones cannot (for example, the mask token must always be there). Therefore, `PVP` provides a `shortenable()` method to indicate that a piece of text can be shortened:
+To find out how to work with PET:
 
-```python
-def get_parts(self, example: InputExample):
-    text_a = self.shortenable(example.text_a)
-    text_b = self.shortenable(example.text_b)
-    return [text_a, '.', text_b, '. Overall, it was ', self.mask], []
-```
+- [Tutorial 1: PET_FinancialPhraseBank.ipynb](notebooks/PET_FinancialPhraseBank.ipynb) pipeline using Pet method
 
-### PET with Multiple Masks
+- [Tutorial 2: iPET_zero_shot_FinancialPhraseBank.ipynb](notebooks/iPET_zero_shot_FinancialPhraseBank.ipynb) pipeline using iPet method
 
-By default, the current implementation of PET and iPET only supports a fixed set of labels that is shared across all examples and verbalizers that correspond to a single token. 
-However, for some tasks it may be necessary to use verbalizers that correspond to multiple tokens ([as described here](http://arxiv.org/abs/2009.07118)).
-To do so, you simply need the following two modifications:
+Careful : You can use PET method in the same way as AutoNLP but for iPET the code is different
 
-1) Add the following lines in your task's **DataProcessor** (see `examples/custom_task_processor.py`):
- 
-   ```python
-   from pet.tasks import TASK_HELPERS
-   from pet.task_helpers import MultiMaskTaskHelper
-   TASK_HELPERS['my_task'] = MultiMaskTaskHelper
-   ```
-   where ```'my_task'``` is the name of your task. 
+For more information about PET : https://github.com/timoschick/pet
 
-2) In your **PVP**, make sure that the ``get_parts()`` method always inserts **the maximum number of mask tokens** required for any verbalization. For example, if your verbalizer maps ``+1`` to "really awesome" and ``-1`` to "terrible" and if those are tokenized as ``["really", "awe", "##some"]`` and ``["terrible"]``, respectively, your ``get_parts()`` method should always return a sequence that contains exactly 3 mask tokens.
-
-With this modification, you can now use verbalizers consisting of multiple tokens:
-```python
-VERBALIZER = {"+1": ["really good"], "-1": ["just bad"]}
-```
-However, there are several limitations to consider:
-
-- When using a ``MultiMaskTaskHelper``, the maximum batch size for evaluation is 1.
-- As using multiple masks requires multiple forward passes during evaluation, the time required for evaluation scales about linearly with the length of the longest verbalizer. If you require verbalizers that consist of 10 or more tokens, [using a generative LM](https://arxiv.org/abs/2012.11926) might be a better approach.
-- The ``MultiMaskTaskHelper`` class is an experimental feature that is not thoroughly tested. In particular, this feature has only been tested for PET and not for iPET. If you observe something strange, please raise an issue.
-
-For more flexibility, you can also write a custom `TaskHelper`. As a starting point, you can check out the classes `CopaTaskHelper`, `WscTaskHelper` and `RecordTaskHelper` in `pet/task_helpers.py`.
-
-## 📕 Citation
-
-If you make use of the code in this repository, please cite the following papers:
+## Code from :
 
     @article{schick2020exploiting,
       title={Exploiting Cloze Questions for Few-Shot Text Classification and Natural Language Inference},
