@@ -434,7 +434,7 @@ class Pet:
         else:
             self.fold_id = np.ones((len(self.y_val),)) * -1
 
-        all_metrics_train = {}
+        self.oof_val = {}
 
         data_dir = self.outdir
         train_file_name = "train"
@@ -473,15 +473,24 @@ class Pet:
                                                         text_x_column=text_x_column, text_y_column=text_y_column)
             y_val_pred = self.get_y_pred(logits_dict_val)
 
-            if first_fold:
-                first_fold = False
-                if train_index == 'all':
-                    self.oof_val = np.array(["" for i in range(y_val.shape[0])])
-                else:
-                    self.oof_val = np.array(["" for i in range(self.y_train.shape[0])])
-            self.oof_val[val_index] = y_val_pred
+            for it, idx in enumerate(val_index):
+                self.oof_val[idx] = y_val_pred[it]
+            self.fold_id[val_index] = num_fold
 
-        acc, f1, recall, precision = self.calcul_metric_classification(self.y_train, self.oof_val, True)
+        sd = sorted(self.oof_val.items())
+        prediction_oof_val = []
+        for k, v in sd:
+            prediction_oof_val.append(v)
+        prediction_oof_val = np.array(prediction_oof_val)
+
+        if self.X_val is None:
+            # cross-validation
+            y_true_sample = self.y_train.values[np.where(self.fold_id >= 0)[0]].copy()
+        else:
+            # validation
+            y_true_sample = self.Y_val.copy()
+
+        acc, f1, recall, precision = self.calcul_metric_classification(y_true_sample, prediction_oof_val, True)
 
         self.info_scores[self.flags_parameters.model_type]["accuracy_val"] = acc
         self.info_scores[self.flags_parameters.model_type]["f1_macro_val"] = f1
@@ -545,9 +554,9 @@ class Pet:
 
             for label in logits_dict_test.keys():
                 if label not in result_dict.keys():
-                    result_dict = logits_dict_test[label]
+                    result_dict[label] = logits_dict_test[label]
                 else:
-                    result_dict = result_dict + logits_dict_test[label]
+                    result_dict[label] = result_dict[label] + logits_dict_test[label]
 
         for label in result_dict.keys():
             result_dict[label] = result_dict[label] / n_model

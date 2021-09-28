@@ -148,11 +148,11 @@ class Prepare:
 
         if self.cv_strategy == "StratifiedKFold" and Y_train is not None:
             skf = StratifiedKFold(n_splits=self.nfolds, random_state=self.seed, shuffle=True)
-            folds_sklearn = skf.split(Y_train, Y_train)
+            folds_sklearn = skf.split(np.array(Y_train), np.array(Y_train))
         else:
             if Y_train is None:
                 kf = KFold(n_splits=self.nfolds, random_state=self.seed, shuffle=True)
-                folds_sklearn = kf.split(X_train)
+                folds_sklearn = kf.split(np.array(X_train))
             else:
                 kf = KFold(n_splits=self.nfolds, random_state=self.seed, shuffle=True)
                 folds_sklearn = kf.split(Y_train)
