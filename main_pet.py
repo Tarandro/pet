@@ -558,11 +558,14 @@ class Pet:
                 else:
                     result_dict[label] = result_dict[label] + logits_dict_test[label]
 
+            y_test_pred = self.get_y_pred(logits_dict_test)
+            _, _, _, _ = self.calcul_metric_classification(y, y_test_pred, True)
+
         for label in result_dict.keys():
             result_dict[label] = result_dict[label] / n_model
 
         y_test_pred = self.get_y_pred(result_dict)
-        y_test_confidence = self.get_y_pred(result_dict)
+        y_test_confidence = self.get_y_confidence(result_dict)
 
         acc, f1, recall, precision = self.calcul_metric_classification(y, y_test_pred, True)
 
