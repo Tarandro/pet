@@ -21,12 +21,12 @@ def small_clean_text(text):
     text = re.sub('\n', ' ', text)
     text = re.sub('\r', ' ', text)
 
-    text = re.sub('\[.*?\]', ' ', text)
-    text = re.sub('https?://\S+|www\.\S+', ' ', text)
+    #text = re.sub('\[.*?\]', ' ', text)
+    #text = re.sub('https?://\S+|www\.\S+', ' ', text)
     text = re.sub('’', ' ', text)
 
     #text = re.sub('\w*\d\w*', ' ', text)
-    text = re.sub(' +', ' ', text)
+    #text = re.sub(' +', ' ', text)
     return text
 
 

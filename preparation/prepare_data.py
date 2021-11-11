@@ -156,16 +156,35 @@ class Prepare:
         rd.seed(self.seed)
         fold_to_train = rd.sample([i for i in range(self.nfolds)], k=max(min(self.nfolds_train, self.nfolds), 1))
 
-        if self.cv_strategy == "StratifiedKFold" and Y_train is not None:
-            skf = StratifiedKFold(n_splits=self.nfolds, random_state=self.seed, shuffle=True)
-            folds_sklearn = skf.split(np.array(Y_train), np.array(Y_train))
-        else:
-            if Y_train is None:
-                kf = KFold(n_splits=self.nfolds, random_state=self.seed, shuffle=True)
-                folds_sklearn = kf.split(np.array(X_train))
+        if self.column_text_b is None:
+            if self.cv_strategy == "StratifiedKFold" and Y_train is not None:
+                skf = StratifiedKFold(n_splits=self.nfolds, random_state=self.seed, shuffle=True)
+                folds_sklearn = skf.split(np.array(Y_train), np.array(Y_train))
             else:
-                kf = KFold(n_splits=self.nfolds, random_state=self.seed, shuffle=True)
-                folds_sklearn = kf.split(Y_train)
+                if Y_train is None:
+                    kf = KFold(n_splits=self.nfolds, random_state=self.seed, shuffle=True)
+                    folds_sklearn = kf.split(np.array(X_train))
+                else:
+                    kf = KFold(n_splits=self.nfolds, random_state=self.seed, shuffle=True)
+                    folds_sklearn = kf.split(Y_train)
+        else:
+            org = X_train.copy()
+            unique_comments = np.unique(np.concatenate([X_train.iloc[:, 0], X_train.iloc[:, 1]]))
+            comment_to_fold = {}
+
+            kf_gen = KFold(self.nfolds, random_state=self.seed).split(unique_comments)
+            for fold, (_, comments_idx) in enumerate(kf_gen):
+                for comment in unique_comments[comments_idx]:
+                    comment_to_fold[comment] = fold
+
+            org['A_fold'] = org.iloc[:, 0].map(comment_to_fold)
+            org['B_fold'] = org.iloc[:, 1].map(comment_to_fold)
+
+            folds_sklearn = []
+            for fold in self.nfolds:
+                train = org[(org.less_toxic_fold != fold) & (org.more_toxic_fold != fold)]
+                valid = org[(org.less_toxic_fold == fold) & (org.more_toxic_fold == fold)]
+                folds_sklearn.append((list(train.index), list(valid.index)))
 
         folds = []
         for num_fold, (train_index, val_index) in enumerate(folds_sklearn):
