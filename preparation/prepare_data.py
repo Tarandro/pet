@@ -21,6 +21,7 @@ class Prepare:
             flags_parameters : Instance of Flags class object
         From flags_parameters:
             column_text (str) : name of the column with texts (only one column)
+            column_text_b (str) : name of the column_b with texts (only one column)
             target (str or List) : names of target columns
             frac_trainset (float) pourcentage of data for train set
             map_label (dict) dictionary to map label to integer
@@ -30,6 +31,7 @@ class Prepare:
             cv_strategy ("StratifiedKFold" or "KFold")
         """
         self.column_text = flags_parameters.column_text
+        self.column_text_b = flags_parameters.column_text_b
         self.frac_trainset = flags_parameters.frac_trainset
         self.debug = flags_parameters.debug
         self.seed = flags_parameters.seed
@@ -65,8 +67,16 @@ class Prepare:
         # for X, keep only the column 'self.column_text'
         # WARNING : self.column_text (int) is now the column number of self.column_text (str) in self.data
         column_text = list(data[[self.column_text]].columns).index(self.column_text)
+        if self.column_text_b is not None:
+            data_ = data[[self.column_text, self.column_text_b]]
+            column_text = list(data_.columns).index(self.column_text)
+            column_text_b = list(data_.columns).index(self.column_text_b)
+        else:
+            data_ = data[[self.column_text]]
+            column_text = list(data_.columns).index(self.column_text)
+            column_text_b = None
 
-        return data[[self.column_text]], Y, column_text
+        return data_, Y, column_text, column_text_b
 
     def split_data(self, data, Y, frac_trainset):
         """ split data, Y -> X_train, X_test, Y_train, Y_test
@@ -174,7 +184,7 @@ class Prepare:
             doc_spacy_data_val (array) documents from column_text dataset_val preprocessed by spacy
         """
 
-        data, Y, column_text = self.separate_X_Y(data)
+        data, Y, column_text, column_text_b = self.separate_X_Y(data)
 
         if dataset_val is None:
             X_train, Y_train, X_test, Y_test = self.split_data(data, Y, self.frac_trainset)
@@ -188,4 +198,4 @@ class Prepare:
             X_val, Y_val, folds = self.create_validation(dataset_val)
             X_test, Y_test = X_val, Y_val
 
-        return column_text, X_train, Y_train, X_val, Y_val, X_test, Y_test, folds
+        return column_text, column_text_b, X_train, Y_train, X_val, Y_val, X_test, Y_test, folds

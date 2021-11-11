@@ -36,6 +36,8 @@ class Flags:
 
     # name of the column with text
     column_text: str = 'text'
+    # name of the column_b with text
+    column_text_b: str = None
     # name of target column
     target: str = 'target'
 

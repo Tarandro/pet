@@ -190,7 +190,7 @@ class Pet:
             self.dataset_val = self.pre.transform(self.dataset_val)
 
         self.prepare = Prepare(self.flags_parameters)
-        self.column_text, self.X_train, self.Y_train, self.X_val, self.Y_val, self.X_test, self.Y_test, self.folds = self.prepare.get_datasets(
+        self.column_text, self.column_text_b, self.X_train, self.Y_train, self.X_val, self.Y_val, self.X_test, self.Y_test, self.folds = self.prepare.get_datasets(
             self.data, self.dataset_val)
 
         self.target = self.prepare.target
@@ -198,7 +198,7 @@ class Pet:
         # unlabeled data :
         self.dataset_unlabeled = pd.read_csv(self.flags_parameters.path_data_unlabeled)
         self.dataset_unlabeled = self.pre.transform(self.dataset_unlabeled)
-        self.X_unlabeled, self.Y_unlabeled, self.column_text = self.prepare.separate_X_Y(self.dataset_unlabeled)
+        self.X_unlabeled, self.Y_unlabeled, self.column_text, self.column_text_b = self.prepare.separate_X_Y(self.dataset_unlabeled)
         if self.Y_unlabeled is None:
             self.Y_unlabeled = pd.DataFrame({self.Y_train.columns[0]: [self.Y_train.iloc[0, 0] for i in range(len(self.X_unlabeled))]})
 
@@ -220,12 +220,12 @@ class Pet:
 
         if self.pre is not None:
             data_test = self.pre.transform(data_test)
-            data_test, y_test, self.column_text = self.prepare.separate_X_Y(data_test)
+            data_test, y_test, self.column_text, self.column_text_b = self.prepare.separate_X_Y(data_test)
         else:
             self.pre = Preprocessing_NLP(data_test, self.flags_parameters)
             data_test = self.pre.transform(data_test)
             self.prepare = Prepare(self.flags_parameters)
-            data_test, y_test, self.column_text = self.prepare.separate_X_Y(data_test)
+            data_test, y_test, self.column_text, self.column_text_b = self.prepare.separate_X_Y(data_test)
             self.target = self.prepare.target
         if y_test is None:
             return data_test
@@ -270,7 +270,7 @@ class Pet:
             assert isinstance(self.y_train, pd.DataFrame), "y/self.y_train must be a DataFrame type"
 
     def train_single_model(self, data_dir, train_file_name, dev_file_name, test_file_name, unlabeled_file_name,
-                           text_x_column=0, text_y_column=1):
+                           text_x_column=0, text_x_column_b=None, text_y_column=1):
 
         output_dir_train = os.path.join(self.outdir, "train_single_model")
         if os.path.exists(output_dir_train) and os.listdir(output_dir_train) \
@@ -278,10 +278,15 @@ class Pet:
             raise ValueError("Output directory ({}) already exists and is not empty.".format(output_dir_train))
         os.makedirs(output_dir_train)
 
+        if text_x_column_b is None:
+            TEXT_B_COLUMN = -1
+        else:
+            TEXT_B_COLUMN = text_x_column_b
+
         processor = ClassProcessor(TRAIN_FILE_NAME=train_file_name, DEV_FILE_NAME=dev_file_name,
                                    TEST_FILE_NAME=test_file_name, UNLABELED_FILE_NAME=unlabeled_file_name,
                                    LABELS=self.flags_parameters.labels, TEXT_A_COLUMN=text_x_column,
-                                   TEXT_B_COLUMN=-1, LABEL_COLUMN=text_y_column)
+                                   TEXT_B_COLUMN=TEXT_B_COLUMN, LABEL_COLUMN=text_y_column)
         self.flags_parameters.label_list = processor.get_labels()
         with open(os.path.join(output_dir_train, "label_list.json"), "w") as outfile:
             json.dump(self.flags_parameters.label_list, outfile)
@@ -352,7 +357,7 @@ class Pet:
 
     def predict_single_model(self, eval_set, output_dir_final_model, data_dir,
                              train_file_name, dev_file_name, test_file_name, unlabeled_file_name,
-                             text_x_column=0, text_y_column=1):
+                             text_x_column=0, text_x_column_b=None, text_y_column=1):
         args = add_fix_params(self.flags_parameters)
 
         if output_dir_final_model is None:
@@ -366,10 +371,15 @@ class Pet:
         f = open(os.path.join(output_dir_final_model, "label_map.json"), "r")
         label_map = json.load(f)
 
+        if text_x_column_b is None:
+            TEXT_B_COLUMN = -1
+        else:
+            TEXT_B_COLUMN = text_x_column_b
+
         processor = ClassProcessor(TRAIN_FILE_NAME=train_file_name, DEV_FILE_NAME=dev_file_name,
                                    TEST_FILE_NAME=test_file_name, UNLABELED_FILE_NAME=unlabeled_file_name,
                                    LABELS=args.labels, TEXT_A_COLUMN=text_x_column,
-                                   TEXT_B_COLUMN=-1, LABEL_COLUMN=text_y_column)
+                                   TEXT_B_COLUMN=TEXT_B_COLUMN, LABEL_COLUMN=text_y_column)
 
         eval_data = load_examples(processor, data_dir, eval_set, num_examples=-1, num_examples_per_label=None)
 
@@ -455,8 +465,12 @@ class Pet:
                 x_train, x_val = self.x_train.iloc[train_index, :], self.x_train.iloc[val_index, :]
                 y_train, y_val = self.y_train.iloc[train_index, :], self.y_train.iloc[val_index, :]
 
-            text_x_column = 0
-            text_y_column = 1
+            text_x_column = self.column_text
+            text_x_column_b = self.column_text_b
+            if text_x_column_b is None:
+                text_y_column = 1
+            else:
+                text_y_column = 2
 
             pd.concat([x_train, y_train], axis=1).to_csv(os.path.join(data_dir, train_file_name), index=False)
             pd.concat([x_val, y_val], axis=1).to_csv(os.path.join(data_dir, dev_file_name), index=False)
@@ -464,13 +478,15 @@ class Pet:
 
             output_dir_final_model = self.train_single_model(data_dir, train_file_name, dev_file_name,
                                                              dev_file_name, unlabeled_file_name,
-                                                             text_x_column=text_x_column, text_y_column=text_y_column)
+                                                             text_x_column=text_x_column, text_x_column_b=text_x_column_b,
+                                                             text_y_column=text_y_column)
 
             logits_dict_val = self.predict_single_model(eval_set="dev", output_dir_final_model=output_dir_final_model,
                                                         data_dir=data_dir,
                                                         train_file_name=train_file_name, dev_file_name=dev_file_name,
                                                         test_file_name=dev_file_name, unlabeled_file_name=unlabeled_file_name,
-                                                        text_x_column=text_x_column, text_y_column=text_y_column)
+                                                        text_x_column=text_x_column, text_x_column_b=text_x_column_b,
+                                                        text_y_column=text_y_column)
             y_val_pred = self.get_y_pred(logits_dict_val)
 
             for it, idx in enumerate(val_index):
@@ -535,8 +551,14 @@ class Pet:
 
         data_dir = self.outdir
         test_file_name = "test.csv"
-        text_x_column = 0
-        text_y_column = 1
+
+        text_x_column = self.column_text
+        text_x_column_b = self.column_text_b
+        if text_x_column_b is None:
+            text_y_column = 1
+        else:
+            text_y_column = 2
+
         pd.concat([x, y], axis=1).to_csv(os.path.join(data_dir, test_file_name), index=False)
 
         model_paths = sorted(glob(os.path.join(self.outdir, 'final*')))
@@ -550,7 +572,8 @@ class Pet:
                                                          data_dir=data_dir,
                                                          train_file_name="", dev_file_name="",
                                                          test_file_name=test_file_name, unlabeled_file_name="",
-                                                         text_x_column=text_x_column, text_y_column=text_y_column)
+                                                         text_x_column=text_x_column, text_x_column_b=text_x_column_b,
+                                                         text_y_column=text_y_column)
 
             for label in logits_dict_test.keys():
                 if label not in result_dict.keys():
