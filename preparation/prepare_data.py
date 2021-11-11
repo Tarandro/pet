@@ -181,7 +181,7 @@ class Prepare:
             org['B_fold'] = org.iloc[:, 1].map(comment_to_fold)
 
             folds_sklearn = []
-            for fold in self.nfolds:
+            for fold in range(self.nfolds):
                 train = org[(org.A_fold != fold) & (org.B_fold != fold)]
                 valid = org[(org.A_fold == fold) & (org.B_fold == fold)]
                 folds_sklearn.append((list(train.index), list(valid.index)))
