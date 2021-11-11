@@ -182,8 +182,8 @@ class Prepare:
 
             folds_sklearn = []
             for fold in self.nfolds:
-                train = org[(org.less_toxic_fold != fold) & (org.more_toxic_fold != fold)]
-                valid = org[(org.less_toxic_fold == fold) & (org.more_toxic_fold == fold)]
+                train = org[(org.A_fold != fold) & (org.B_fold != fold)]
+                valid = org[(org.A_fold == fold) & (org.B_fold == fold)]
                 folds_sklearn.append((list(train.index), list(valid.index)))
 
         folds = []
