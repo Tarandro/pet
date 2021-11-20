@@ -26,10 +26,10 @@ from pet.task_helpers import MultiMaskTaskHelper
 from pet.tasks import TASK_HELPERS
 from pet.utils import InputExample, get_verbalization_ids
 
-import log
+import logg
 from pet import wrapper as wrp
 
-logger = log.get_logger('root')
+logger = logg.get_logger('root')
 
 FilledPattern = Tuple[List[Union[str, Tuple[str, bool]]], List[Union[str, Tuple[str, bool]]]]
 

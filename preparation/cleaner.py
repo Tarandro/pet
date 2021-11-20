@@ -3,8 +3,8 @@ import pandas as pd
 import re
 import string
 
-import log
-logger = log.get_logger('root')
+import logg
+logger = logg.get_logger('root')
 
 
 ####################

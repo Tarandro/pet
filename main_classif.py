@@ -23,11 +23,11 @@ import numpy as np
 
 import torch
 
-import log
+import logg
 import classification
 from classification import tasks_classif, wrapper_classif, utils_classif
 
-logger = log.get_logger('root')
+logger = logg.get_logger('root')
 
 
 def load_sequence_classifier_configs_classif(args) -> Tuple[classification.WrapperConfig, classification.TrainConfig, classification.EvalConfig]:

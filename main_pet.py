@@ -25,11 +25,11 @@ from pet.tasks import ClassProcessor, PROCESSORS, load_examples, UNLABELED_SET, 
 from pet.utils import eq_div
 from pet.wrapper import WRAPPER_TYPES, MODEL_CLASSES, SEQUENCE_CLASSIFIER_WRAPPER, WrapperConfig
 import pet
-import log
+import logg
 from pet.flags import save_yaml
 import dataclasses
 
-logger = log.get_logger('root')
+logger = logg.get_logger('root')
 
 # logging.getLogger().setLevel(verbosity_to_loglevel(2))
 

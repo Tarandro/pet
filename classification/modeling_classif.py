@@ -24,11 +24,11 @@ import torch
 from sklearn.metrics import f1_score, precision_score, recall_score
 from transformers.data.metrics import simple_accuracy
 
-import log
+import logg
 from classification.utils_classif import InputExample, exact_match, save_logits, save_predictions, softmax, LogitsList, set_seed, eq_div
 from classification.wrapper_classif import TransformerModelWrapper, SEQUENCE_CLASSIFIER_WRAPPER, WrapperConfig
 
-logger = log.get_logger('root')
+logger = logg.get_logger('root')
 
 
 class PetConfig(ABC):

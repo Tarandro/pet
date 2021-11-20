@@ -3,8 +3,8 @@ import numpy as np
 import random as rd
 from sklearn.model_selection import KFold, StratifiedKFold
 
-import log
-logger = log.get_logger('root')
+import logg
+logger = logg.get_logger('root')
 
 
 class Prepare:

@@ -12,9 +12,9 @@ from transformers import PreTrainedTokenizer, RobertaTokenizer
 from pet.tasks import PROCESSORS, load_examples, TRAIN_SET
 from pet.utils import InputExample, eq_div
 from pet.wrapper import TransformerModelWrapper, MODEL_CLASSES, WrapperConfig
-import log
+import logg
 
-logger = log.get_logger('root')
+logger = logg.get_logger('root')
 
 
 def filter_words(tokens: List[str], word_counts=None, max_words: int = -1):

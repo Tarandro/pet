@@ -22,11 +22,11 @@ from abc import ABC, abstractmethod
 from collections import defaultdict, Counter
 from typing import List, Dict, Callable
 
-import log
+import logg
 from pet import task_helpers
 from pet.utils import InputExample
 
-logger = log.get_logger('root')
+logger = logg.get_logger('root')
 
 
 def _shuffle_and_restrict(examples: List[InputExample], num_examples: int, seed: int = 42) -> List[InputExample]:

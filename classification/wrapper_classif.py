@@ -32,12 +32,12 @@ from transformers import InputExample, AdamW, get_linear_schedule_with_warmup, P
     GPT2Config, GPT2Tokenizer, CamembertConfig, CamembertTokenizer, CamembertForSequenceClassification
 from transformers import __version__ as transformers_version
 
-import log
+import logg
 from classification import preprocessor_classif
 from classification.tasks_classif import TASK_HELPERS
 from classification.utils_classif import InputFeatures, DictDataset, distillation_loss
 
-logger = log.get_logger('root')
+logger = logg.get_logger('root')
 
 CONFIG_NAME = 'wrapper_config.json'
 SEQUENCE_CLASSIFIER_WRAPPER = "sequence_classifier"
