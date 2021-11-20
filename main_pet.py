@@ -363,6 +363,11 @@ class Pet:
         if output_dir_final_model is None:
             output_dir_final_model = os.path.join(self.outdir, 'final')
 
+        try:
+            a = args.label_list
+        except:
+            args.label_list = args.labels
+
         logger.info("Parameters: {}".format(args))
 
         if not os.path.exists(self.outdir):
